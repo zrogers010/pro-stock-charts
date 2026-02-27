@@ -8,8 +8,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const symbol = params.symbol.toUpperCase();
   return {
-    title: `${symbol} Stock Price & Chart — ProStockCharts`,
-    description: `View real-time stock price, interactive charts, key statistics, and latest news for ${symbol}.`,
+    title: `${symbol} Price & Chart — ProStockCharts`,
+    description: `View real-time price, interactive charts, key statistics, and latest news for ${symbol}.`,
   };
 }
 

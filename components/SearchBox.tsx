@@ -137,7 +137,7 @@ export default function SearchBox({
           }}
           onKeyDown={handleKeyDown}
           onFocus={() => results.length > 0 && setIsOpen(true)}
-          placeholder="Search stocks, ETFs..."
+          placeholder="Search stocks, crypto, commodities..."
           autoFocus={autoFocus}
           className={`w-full bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600/50 transition-all ${
             large ? "pl-12 pr-4 py-3.5" : "pl-10 pr-4 py-2"
@@ -175,13 +175,34 @@ export default function SearchBox({
                   {result.name}
                 </span>
               </div>
-              <span className="text-[10px] text-zinc-600 uppercase flex-shrink-0 ml-2">
-                {result.exchange}
-              </span>
+              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                <TypeBadge type={result.type} />
+                <span className="text-[10px] text-zinc-600 uppercase">
+                  {result.exchange}
+                </span>
+              </div>
             </button>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+const typeConfig: Record<string, { label: string; color: string }> = {
+  EQUITY: { label: "Stock", color: "text-blue-400 bg-blue-400/10" },
+  ETF: { label: "ETF", color: "text-violet-400 bg-violet-400/10" },
+  INDEX: { label: "Index", color: "text-zinc-400 bg-zinc-400/10" },
+  CRYPTOCURRENCY: { label: "Crypto", color: "text-amber-400 bg-amber-400/10" },
+  FUTURE: { label: "Futures", color: "text-emerald-400 bg-emerald-400/10" },
+  COMMODITY: { label: "Commodity", color: "text-emerald-400 bg-emerald-400/10" },
+};
+
+function TypeBadge({ type }: { type: string }) {
+  const cfg = typeConfig[type] || { label: type, color: "text-zinc-500 bg-zinc-500/10" };
+  return (
+    <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${cfg.color}`}>
+      {cfg.label}
+    </span>
   );
 }

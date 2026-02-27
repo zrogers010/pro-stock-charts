@@ -7,21 +7,28 @@ export async function GET(
 ) {
   try {
     const symbol = params.symbol.toUpperCase();
+    const quote = await yahooFinance.quote(symbol);
 
-    const [quote, summary] = await Promise.all([
-      yahooFinance.quote(symbol),
-      yahooFinance
-        .quoteSummary(symbol, {
-          modules: [
-            "assetProfile",
-            "summaryDetail",
-            "financialData",
-            "defaultKeyStatistics",
-            "recommendationTrend",
-          ],
-        })
-        .catch(() => null),
-    ]);
+    const quoteType = (quote as any)?.quoteType || "EQUITY";
+    const isCrypto = quoteType === "CRYPTOCURRENCY";
+    const isFuture = quoteType === "FUTURE" || quoteType === "COMMODITY";
+
+    let modules: string[];
+    if (isCrypto || isFuture) {
+      modules = ["summaryDetail"];
+    } else {
+      modules = [
+        "assetProfile",
+        "summaryDetail",
+        "financialData",
+        "defaultKeyStatistics",
+        "recommendationTrend",
+      ];
+    }
+
+    const summary = await yahooFinance
+      .quoteSummary(symbol, { modules: modules as any })
+      .catch(() => null);
 
     return NextResponse.json({ quote, summary });
   } catch (error) {

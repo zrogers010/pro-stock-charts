@@ -19,6 +19,7 @@ interface QuoteData {
   symbol: string;
   shortName?: string;
   longName?: string;
+  quoteType?: string;
   regularMarketPrice?: number;
   regularMarketChange?: number;
   regularMarketChangePercent?: number;
@@ -33,6 +34,9 @@ interface QuoteData {
   fiftyTwoWeekLow?: number;
   exchange?: string;
   fullExchangeName?: string;
+  circulatingSupply?: number;
+  volume24Hr?: number;
+  volumeAllCurrencies?: number;
 }
 
 interface SummaryData {
@@ -168,6 +172,11 @@ export default function StockView({ symbol }: { symbol: string }) {
   const financial = summary?.financialData;
   const keyStats = summary?.defaultKeyStatistics;
 
+  const quoteType = quote.quoteType || "EQUITY";
+  const isCrypto = quoteType === "CRYPTOCURRENCY";
+  const isFuture = quoteType === "FUTURE" || quoteType === "COMMODITY";
+  const isEquityLike = !isCrypto && !isFuture;
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -181,6 +190,9 @@ export default function StockView({ symbol }: { symbol: string }) {
             <span className="text-zinc-400 text-base">
               {quote.shortName || quote.longName}
             </span>
+            {(isCrypto || isFuture) && (
+              <AssetTypeBadge type={quoteType} />
+            )}
             {quote.fullExchangeName && (
               <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-full font-medium uppercase tracking-wide">
                 {quote.fullExchangeName}
@@ -239,34 +251,52 @@ export default function StockView({ symbol }: { symbol: string }) {
                 label="Avg Volume"
                 value={formatNumber(quote.averageDailyVolume3Month)}
               />
-              <StatRow
-                label="Market Cap"
-                value={formatLargeNumber(quote.marketCap)}
-              />
-              <StatRow
-                label="P/E (TTM)"
-                value={detail?.trailingPE?.toFixed(2)}
-              />
-              <StatRow
-                label="P/E (Fwd)"
-                value={detail?.forwardPE?.toFixed(2)}
-              />
-              <StatRow
-                label="EPS (TTM)"
-                value={
-                  keyStats?.trailingEps != null
-                    ? `$${keyStats.trailingEps.toFixed(2)}`
-                    : undefined
-                }
-              />
-              <StatRow
-                label="Dividend Yield"
-                value={
-                  detail?.dividendYield != null
-                    ? formatPercent(detail.dividendYield)
-                    : undefined
-                }
-              />
+              {quote.marketCap != null && (
+                <StatRow
+                  label="Market Cap"
+                  value={formatLargeNumber(quote.marketCap)}
+                />
+              )}
+              {isCrypto && quote.circulatingSupply != null && (
+                <StatRow
+                  label="Circulating Supply"
+                  value={formatLargeNumber(quote.circulatingSupply)}
+                />
+              )}
+              {isCrypto && (quote.volume24Hr != null || quote.volumeAllCurrencies != null) && (
+                <StatRow
+                  label="24h Volume"
+                  value={formatLargeNumber(quote.volume24Hr ?? quote.volumeAllCurrencies)}
+                />
+              )}
+              {isEquityLike && (
+                <>
+                  <StatRow
+                    label="P/E (TTM)"
+                    value={detail?.trailingPE?.toFixed(2)}
+                  />
+                  <StatRow
+                    label="P/E (Fwd)"
+                    value={detail?.forwardPE?.toFixed(2)}
+                  />
+                  <StatRow
+                    label="EPS (TTM)"
+                    value={
+                      keyStats?.trailingEps != null
+                        ? `$${keyStats.trailingEps.toFixed(2)}`
+                        : undefined
+                    }
+                  />
+                  <StatRow
+                    label="Dividend Yield"
+                    value={
+                      detail?.dividendYield != null
+                        ? formatPercent(detail.dividendYield)
+                        : undefined
+                    }
+                  />
+                </>
+              )}
               <StatRow label="Beta" value={detail?.beta?.toFixed(2)} />
               <StatRow
                 label="50 Day Avg"
@@ -276,22 +306,26 @@ export default function StockView({ symbol }: { symbol: string }) {
                 label="200 Day Avg"
                 value={formatCurrency(detail?.twoHundredDayAverage)}
               />
-              <StatRow
-                label="Shares Out"
-                value={
-                  keyStats?.sharesOutstanding != null
-                    ? formatLargeNumber(keyStats.sharesOutstanding)
-                    : undefined
-                }
-              />
-              <StatRow
-                label="PEG Ratio"
-                value={keyStats?.pegRatio?.toFixed(2)}
-              />
-              <StatRow
-                label="Price/Book"
-                value={keyStats?.priceToBook?.toFixed(2)}
-              />
+              {isEquityLike && (
+                <>
+                  <StatRow
+                    label="Shares Out"
+                    value={
+                      keyStats?.sharesOutstanding != null
+                        ? formatLargeNumber(keyStats.sharesOutstanding)
+                        : undefined
+                    }
+                  />
+                  <StatRow
+                    label="PEG Ratio"
+                    value={keyStats?.pegRatio?.toFixed(2)}
+                  />
+                  <StatRow
+                    label="Price/Book"
+                    value={keyStats?.priceToBook?.toFixed(2)}
+                  />
+                </>
+              )}
             </div>
           </div>
 
@@ -534,6 +568,22 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <div className="text-[11px] text-zinc-500 mb-0.5">{label}</div>
       <div className="text-sm text-white font-medium">{value}</div>
     </div>
+  );
+}
+
+const assetTypeBadgeConfig: Record<string, { label: string; color: string }> = {
+  CRYPTOCURRENCY: { label: "Crypto", color: "text-amber-400 bg-amber-400/10 border-amber-400/20" },
+  FUTURE: { label: "Futures", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
+  COMMODITY: { label: "Commodity", color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
+};
+
+function AssetTypeBadge({ type }: { type: string }) {
+  const cfg = assetTypeBadgeConfig[type];
+  if (!cfg) return null;
+  return (
+    <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border ${cfg.color}`}>
+      {cfg.label}
+    </span>
   );
 }
 

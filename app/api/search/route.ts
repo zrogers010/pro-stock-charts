@@ -11,13 +11,18 @@ export async function GET(request: NextRequest) {
       newsCount: 0,
     });
 
+    const allowedTypes = new Set([
+      "EQUITY",
+      "ETF",
+      "INDEX",
+      "CRYPTOCURRENCY",
+      "FUTURE",
+      "COMMODITY",
+    ]);
+
     const results = (result.quotes || [])
       .filter(
-        (item: any) =>
-          item.symbol &&
-          (item.quoteType === "EQUITY" ||
-            item.quoteType === "ETF" ||
-            item.quoteType === "INDEX")
+        (item: any) => item.symbol && allowedTypes.has(item.quoteType)
       )
       .map((item: any) => ({
         symbol: item.symbol,

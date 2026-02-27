@@ -84,8 +84,8 @@ export async function GET(
         q.open != null && q.close != null && q.high != null && q.low != null
     );
 
-    // For 1D, trim to only the most recent trading session
-    if (range === "1d") {
+    const isCrypto = symbol.includes("-");
+    if (range === "1d" && !isCrypto) {
       quotes = filterToLastTradingDay(quotes);
     }
 

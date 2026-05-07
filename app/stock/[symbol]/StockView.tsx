@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import StockChart from "@/components/StockChart";
+import { trackEvent } from "@/lib/analytics";
 import {
   formatCurrency,
   formatLargeNumber,
@@ -10,89 +12,12 @@ import {
   formatNumber,
   timeAgo,
 } from "@/lib/format";
+import { getRelatedAssets } from "@/lib/markets";
+import type { QuoteData, SummaryData } from "@/lib/stock-data";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface QuoteData {
-  symbol: string;
-  shortName?: string;
-  longName?: string;
-  quoteType?: string;
-  regularMarketPrice?: number;
-  regularMarketChange?: number;
-  regularMarketChangePercent?: number;
-  regularMarketPreviousClose?: number;
-  regularMarketOpen?: number;
-  regularMarketDayHigh?: number;
-  regularMarketDayLow?: number;
-  regularMarketVolume?: number;
-  averageDailyVolume3Month?: number;
-  marketCap?: number;
-  fiftyTwoWeekHigh?: number;
-  fiftyTwoWeekLow?: number;
-  exchange?: string;
-  fullExchangeName?: string;
-  circulatingSupply?: number;
-  volume24Hr?: number;
-  volumeAllCurrencies?: number;
-}
-
-interface SummaryData {
-  assetProfile?: {
-    sector?: string;
-    industry?: string;
-    fullTimeEmployees?: number;
-    longBusinessSummary?: string;
-    website?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    companyOfficers?: Array<{ name: string; title: string }>;
-  };
-  summaryDetail?: {
-    trailingPE?: number;
-    forwardPE?: number;
-    dividendYield?: number;
-    dividendRate?: number;
-    beta?: number;
-    fiftyDayAverage?: number;
-    twoHundredDayAverage?: number;
-    trailingAnnualDividendYield?: number;
-    payoutRatio?: number;
-    exDividendDate?: string;
-  };
-  financialData?: {
-    totalRevenue?: number;
-    revenueGrowth?: number;
-    grossMargins?: number;
-    operatingMargins?: number;
-    profitMargins?: number;
-    returnOnEquity?: number;
-    targetMeanPrice?: number;
-    recommendationMean?: number;
-    recommendationKey?: string;
-    numberOfAnalystOpinions?: number;
-    earningsGrowth?: number;
-    currentPrice?: number;
-    totalCash?: number;
-    totalDebt?: number;
-    freeCashflow?: number;
-  };
-  defaultKeyStatistics?: {
-    trailingEps?: number;
-    forwardEps?: number;
-    pegRatio?: number;
-    priceToBook?: number;
-    enterpriseValue?: number;
-    sharesOutstanding?: number;
-    floatShares?: number;
-    shortRatio?: number;
-    shortPercentOfFloat?: number;
-    earningsQuarterlyGrowth?: number;
-  };
-}
 
 interface NewsArticle {
   title: string;
@@ -106,23 +31,38 @@ interface NewsArticle {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function StockView({ symbol }: { symbol: string }) {
-  const [quote, setQuote] = useState<QuoteData | null>(null);
-  const [summary, setSummary] = useState<SummaryData | null>(null);
+export default function StockView({
+  symbol,
+  initialQuote = null,
+  initialSummary = null,
+}: {
+  symbol: string;
+  initialQuote?: QuoteData | null;
+  initialSummary?: SummaryData | null;
+}) {
+  const [quote, setQuote] = useState<QuoteData | null>(initialQuote);
+  const [summary, setSummary] = useState<SummaryData | null>(initialSummary);
   const [news, setNews] = useState<NewsArticle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialQuote);
   const [error, setError] = useState<string | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
 
   useEffect(() => {
-    setIsLoading(true);
+    let cancelled = false;
+    setIsLoading(!initialQuote);
     setError(null);
 
+    const quoteRequest = initialQuote
+      ? Promise.resolve({ quote: initialQuote, summary: initialSummary })
+      : fetch(`/api/quote/${symbol}`).then((r) => r.json());
+
     Promise.all([
-      fetch(`/api/quote/${symbol}`).then((r) => r.json()),
+      quoteRequest,
       fetch(`/api/news/${symbol}`).then((r) => r.json()),
     ])
       .then(([quoteData, newsData]) => {
-        if (quoteData.error) {
+        if (cancelled) return;
+        if ("error" in quoteData && quoteData.error) {
           setError("Could not find stock data for this symbol.");
           return;
         }
@@ -130,9 +70,41 @@ export default function StockView({ symbol }: { symbol: string }) {
         setSummary(quoteData.summary);
         setNews(newsData.news || []);
       })
-      .catch(() => setError("Failed to load stock data."))
-      .finally(() => setIsLoading(false));
-  }, [symbol]);
+      .catch(() => {
+        if (!cancelled) setError("Failed to load stock data.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [symbol, initialQuote, initialSummary]);
+
+  useEffect(() => {
+    trackEvent("stock_page_view", {
+      symbol,
+      quote_type: initialQuote?.quoteType,
+    });
+
+    const storedWatchlist = JSON.parse(
+      window.localStorage.getItem("psc_watchlist") || "[]"
+    ) as string[];
+    setWatchlist(storedWatchlist);
+
+    const recents = JSON.parse(
+      window.localStorage.getItem("psc_recent_symbols") || "[]"
+    ) as string[];
+    const nextRecents = [
+      symbol,
+      ...recents.filter((item) => item !== symbol),
+    ].slice(0, 8);
+    window.localStorage.setItem(
+      "psc_recent_symbols",
+      JSON.stringify(nextRecents)
+    );
+  }, [symbol, initialQuote?.quoteType]);
 
   /* Loading state */
   if (isLoading) {
@@ -176,6 +148,20 @@ export default function StockView({ symbol }: { symbol: string }) {
   const isCrypto = quoteType === "CRYPTOCURRENCY";
   const isFuture = quoteType === "FUTURE" || quoteType === "COMMODITY";
   const isEquityLike = !isCrypto && !isFuture;
+  const displayName = quote.longName || quote.shortName || symbol;
+  const relatedAssets = getRelatedAssets(symbol);
+  const isWatchlisted = watchlist.includes(symbol);
+
+  const toggleWatchlist = () => {
+    const nextWatchlist = isWatchlisted
+      ? watchlist.filter((item) => item !== symbol)
+      : [symbol, ...watchlist].slice(0, 30);
+    setWatchlist(nextWatchlist);
+    window.localStorage.setItem("psc_watchlist", JSON.stringify(nextWatchlist));
+    trackEvent(isWatchlisted ? "watchlist_remove" : "watchlist_add", {
+      symbol,
+    });
+  };
 
   return (
     <div className="min-h-screen">
@@ -185,11 +171,8 @@ export default function StockView({ symbol }: { symbol: string }) {
         <div className="mb-6">
           <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              {symbol}
+              {displayName} ({symbol}) Stock Chart
             </h1>
-            <span className="text-zinc-400 text-base">
-              {quote.shortName || quote.longName}
-            </span>
             {(isCrypto || isFuture) && (
               <AssetTypeBadge type={quoteType} />
             )}
@@ -211,7 +194,22 @@ export default function StockView({ symbol }: { symbol: string }) {
               {isPositive ? "+" : ""}
               {quote.regularMarketChangePercent?.toFixed(2)}%)
             </span>
+            <button
+              onClick={toggleWatchlist}
+              className={`text-xs font-semibold rounded-lg px-3 py-1.5 transition-colors ${
+                isWatchlisted
+                  ? "bg-blue-500/15 text-blue-300"
+                  : "bg-zinc-800/60 text-zinc-400 hover:text-white"
+              }`}
+            >
+              {isWatchlisted ? "In Watchlist" : "Add Watchlist"}
+            </button>
           </div>
+          <p className="text-sm text-zinc-500 mt-3 max-w-3xl">
+            View the {displayName} stock chart with live price context, key
+            statistics, volume, financial metrics, latest news, and exportable
+            historical data.
+          </p>
         </div>
 
         {/* ── Chart ────────────────────────────────────────────── */}
@@ -487,6 +485,12 @@ export default function StockView({ symbol }: { symbol: string }) {
                   href={article.link}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackEvent("news_click", {
+                      symbol,
+                      publisher: article.publisher,
+                    })
+                  }
                   className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-4 hover:bg-zinc-800/40 hover:border-zinc-700/50 transition-all group flex gap-4"
                 >
                   {article.thumbnail && (
@@ -514,6 +518,30 @@ export default function StockView({ symbol }: { symbol: string }) {
               ))}
             </div>
           </div>
+        )}
+
+        {relatedAssets.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">
+              Related Charts
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {relatedAssets.map((asset) => (
+                <Link
+                  key={asset.symbol}
+                  href={`/stock/${asset.symbol}`}
+                  className="bg-zinc-900/40 border border-zinc-800/40 rounded-xl px-4 py-3 hover:bg-zinc-800/40 hover:border-zinc-700/50 transition-all"
+                >
+                  <div className="text-sm font-semibold text-white">
+                    {asset.symbol}
+                  </div>
+                  <div className="text-xs text-zinc-500 truncate mt-1">
+                    {asset.name}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
       </main>
     </div>

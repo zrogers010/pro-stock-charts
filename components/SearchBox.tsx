@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
 
 interface SearchResult {
   symbol: string;
@@ -57,6 +58,11 @@ export default function SearchBox({
   const navigate = (symbol: string) => {
     setIsOpen(false);
     setQuery("");
+    trackEvent("search_submit", {
+      symbol,
+      query,
+      source: selectedIndex >= 0 ? "suggestion" : "manual",
+    });
     router.push(`/stock/${symbol}`);
   };
 

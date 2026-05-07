@@ -1,5 +1,8 @@
 import Header from "@/components/Header";
+import SavedMarkets from "@/components/SavedMarkets";
 import SearchBox from "@/components/SearchBox";
+import { educationArticles } from "@/lib/education";
+import { marketHubs, siteUrl } from "@/lib/markets";
 import Link from "next/link";
 
 const popularStocks = [
@@ -28,9 +31,27 @@ const popularCommodities = [
 ];
 
 export default function HomePage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "ProStockCharts",
+    url: siteUrl,
+    description:
+      "Free professional stock charts, market data, news, and exportable historical price data.",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteUrl}/stock/{search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <main>
         {/* Hero */}
         <div className="flex flex-col items-center justify-center px-4 pt-28 pb-20">
@@ -50,11 +71,12 @@ export default function HomePage() {
             </svg>
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white text-center mb-3 tracking-tight">
-            Charts & Market Data
+            Free Professional Stock Charts
           </h1>
-          <p className="text-zinc-400 text-lg text-center mb-10 max-w-md">
-            Stocks, crypto, commodities & futures. Professional charts, simple
-            and free.
+          <p className="text-zinc-400 text-lg text-center mb-10 max-w-2xl">
+            Fast interactive stock charts, candlestick views, market data, news,
+            and CSV exports for stocks, ETFs, crypto, commodities, futures, and
+            indices. No signup required.
           </p>
           <div className="w-full max-w-xl">
             <SearchBox autoFocus large />
@@ -129,6 +151,81 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        <SavedMarkets />
+
+        <section className="max-w-4xl mx-auto px-4 pb-24">
+          <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-3xl p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold text-white tracking-tight mb-3">
+              Professional charting without the clutter
+            </h2>
+            <p className="text-zinc-400 leading-relaxed mb-6">
+              ProStockCharts is built for quick market research: type a ticker,
+              open a clean chart, switch between line and candlestick views, and
+              export historical price data when you need it. Use it to scan
+              popular stocks, broad market ETFs, crypto pairs, commodity
+              futures, and major indices from one fast interface.
+            </p>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {[
+                "No account or paywall",
+                "Line and candlestick charts",
+                "CSV and JSON data exports",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="bg-zinc-800/30 rounded-xl px-4 py-3 text-sm text-zinc-300"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="max-w-4xl mx-auto px-4 pb-24">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">
+            Explore Markets
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {marketHubs.map((hub) => (
+              <Link
+                key={hub.slug}
+                href={`/${hub.slug}`}
+                className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all"
+              >
+                <div className="text-sm font-semibold text-white mb-2">
+                  {hub.title}
+                </div>
+                <p className="text-sm text-zinc-500 line-clamp-4">
+                  {hub.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="max-w-4xl mx-auto px-4 pb-24">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">
+            Learn Stock Charts
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {educationArticles.slice(0, 4).map((article) => (
+              <Link
+                key={article.slug}
+                href={`/learn/${article.slug}`}
+                className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all"
+              >
+                <div className="text-sm font-semibold text-white mb-2">
+                  {article.title}
+                </div>
+                <p className="text-sm text-zinc-500 line-clamp-2">
+                  {article.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );

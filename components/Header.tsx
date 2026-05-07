@@ -31,7 +31,17 @@ export default function Header() {
           <div className="flex-1 max-w-lg mx-6">
             <SearchBox />
           </div>
-          <div className="w-20" />
+          <nav className="hidden lg:flex items-center gap-4 text-sm text-zinc-500">
+            <Link href="/stocks" className="hover:text-white transition-colors">
+              Stocks
+            </Link>
+            <Link href="/etfs" className="hover:text-white transition-colors">
+              ETFs
+            </Link>
+            <Link href="/crypto" className="hover:text-white transition-colors">
+              Crypto
+            </Link>
+          </nav>
         </div>
       </div>
     </header>

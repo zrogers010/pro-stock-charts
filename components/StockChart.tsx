@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createChart, ColorType, IChartApi } from "lightweight-charts";
+import { trackEvent } from "@/lib/analytics";
 
 interface ChartDataPoint {
   time: string | number;
@@ -23,6 +24,7 @@ const timeRanges = [
 ];
 
 type ChartType = "area" | "candle";
+const validRangeValues = new Set(timeRanges.map((range) => range.value));
 
 export default function StockChart({ symbol }: { symbol: string }) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -31,6 +33,26 @@ export default function StockChart({ symbol }: { symbol: string }) {
   const [chartType, setChartType] = useState<ChartType>("area");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasHydratedUrlState, setHasHydratedUrlState] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const range = params.get("range");
+    const type = params.get("type");
+
+    if (range && validRangeValues.has(range)) setActiveRange(range);
+    if (type === "area" || type === "candle") setChartType(type);
+    setHasHydratedUrlState(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedUrlState) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("range", activeRange);
+    params.set("type", chartType);
+    const nextUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, [activeRange, chartType, hasHydratedUrlState]);
 
   // Fetch data
   useEffect(() => {
@@ -237,6 +259,11 @@ export default function StockChart({ symbol }: { symbol: string }) {
       a.download = `${symbol}_${activeRange}.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
+      trackEvent("chart_data_download", {
+        symbol,
+        range: activeRange,
+        format,
+      });
     },
     [chartData, symbol, activeRange]
   );
@@ -248,7 +275,13 @@ export default function StockChart({ symbol }: { symbol: string }) {
           {timeRanges.map((range) => (
             <button
               key={range.value}
-              onClick={() => setActiveRange(range.value)}
+              onClick={() => {
+                setActiveRange(range.value);
+                trackEvent("chart_range_change", {
+                  symbol,
+                  range: range.value,
+                });
+              }}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 activeRange === range.value
                   ? "bg-blue-500/15 text-blue-400"
@@ -261,7 +294,13 @@ export default function StockChart({ symbol }: { symbol: string }) {
         </div>
         <div className="flex items-center gap-0.5 bg-zinc-800/30 rounded-lg p-0.5">
           <button
-            onClick={() => setChartType("area")}
+            onClick={() => {
+              setChartType("area");
+              trackEvent("chart_type_change", {
+                symbol,
+                chart_type: "area",
+              });
+            }}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
               chartType === "area"
                 ? "bg-zinc-700 text-white"
@@ -271,7 +310,13 @@ export default function StockChart({ symbol }: { symbol: string }) {
             Line
           </button>
           <button
-            onClick={() => setChartType("candle")}
+            onClick={() => {
+              setChartType("candle");
+              trackEvent("chart_type_change", {
+                symbol,
+                chart_type: "candle",
+              });
+            }}
             className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
               chartType === "candle"
                 ? "bg-zinc-700 text-white"

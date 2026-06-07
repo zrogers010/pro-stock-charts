@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { MarketAsset } from "@/lib/markets";
 import { getMarketHub, siteUrl } from "@/lib/markets";
+import { canonicalPath } from "@/lib/seo";
 
 export function assetToSlug(asset: MarketAsset) {
   const normalized = asset.symbol
@@ -28,12 +29,12 @@ export function getHubMetadata(hubSlug: string): Metadata {
     title: hub.title,
     description: hub.description,
     alternates: {
-      canonical: `/${hub.slug}`,
+      canonical: canonicalPath(`/${hub.slug}`),
     },
     openGraph: {
       title: hub.title,
       description: hub.description,
-      url: `/${hub.slug}`,
+      url: canonicalPath(`/${hub.slug}`),
       type: "website",
     },
     twitter: {
@@ -59,12 +60,12 @@ export function getCuratedAssetMetadata(
     title,
     description,
     alternates: {
-      canonical: path,
+      canonical: canonicalPath(path),
     },
     openGraph: {
       title,
       description,
-      url: path,
+      url: canonicalPath(path),
       type: "website",
     },
     twitter: {

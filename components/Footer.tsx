@@ -20,6 +20,12 @@ export default function Footer() {
             <Link href="/data-disclaimer" className="hover:text-zinc-300">
               Data Disclaimer
             </Link>
+            <Link href="/privacy" className="hover:text-zinc-300">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-zinc-300">
+              Terms
+            </Link>
             <Link href="/stocks" className="hover:text-zinc-300">
               Stocks
             </Link>

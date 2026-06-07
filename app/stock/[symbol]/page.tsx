@@ -4,6 +4,7 @@ import StockView from "./StockView";
 import { formatCurrency, formatLargeNumber } from "@/lib/format";
 import { siteUrl } from "@/lib/markets";
 import { getAssetClassLabel } from "@/lib/asset-labels";
+import { canonicalPath } from "@/lib/seo";
 import { fetchStockSnapshot, getDisplayName } from "@/lib/stock-data";
 
 export const revalidate = 300;
@@ -28,12 +29,12 @@ export async function generateMetadata({
     title: `${displayName} (${symbol}) ${assetClass} Chart`,
     description: `View the ${displayName} (${symbol}) ${assetClass.toLowerCase()} chart${price}${exchangeCopy}. Free candlestick charts, price history, key statistics, market data, and news.`,
     alternates: {
-      canonical: `/stock/${encodeURIComponent(symbol)}`,
+      canonical: canonicalPath(`/stock/${encodeURIComponent(symbol)}`),
     },
     openGraph: {
       title: `${displayName} (${symbol}) ${assetClass} Chart`,
       description: `Free interactive ${symbol} chart with price, volume, key statistics, market data, and news.`,
-      url: `/stock/${encodeURIComponent(symbol)}`,
+      url: canonicalPath(`/stock/${encodeURIComponent(symbol)}`),
       type: "website",
     },
     twitter: {

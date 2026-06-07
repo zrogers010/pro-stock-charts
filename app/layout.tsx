@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import Footer from "@/components/Footer";
 import { siteUrl } from "@/lib/markets";
+import { canonicalPath, defaultOgImage } from "@/lib/seo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,21 +24,41 @@ export const metadata: Metadata = {
     "market data",
   ],
   alternates: {
-    canonical: "/",
+    canonical: canonicalPath("/"),
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   openGraph: {
     type: "website",
-    url: "/",
+    url: canonicalPath("/"),
     siteName: "ProStockCharts",
     title: "ProStockCharts - Free Professional Stock Charts",
     description:
       "Fast, free, professional charts and market data for stocks, ETFs, crypto, commodities, futures, and indices.",
+    images: [
+      {
+        url: defaultOgImage,
+        width: 1200,
+        height: 630,
+        alt: "ProStockCharts market charting preview",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "ProStockCharts - Free Professional Stock Charts",
     description:
       "Fast, free, professional charts and market data for stocks, ETFs, crypto, commodities, futures, and indices.",
+    images: [defaultOgImage],
   },
   icons: {
     icon: "/icon",

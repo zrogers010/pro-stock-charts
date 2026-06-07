@@ -6,14 +6,14 @@ A fast, modern stock market dashboard with interactive charts, key statistics, f
 
 ## Features
 
-- **Real-time quotes** — price, change, volume, market cap, and more
+- **Market data** — price, change, volume, market cap, quote timestamps, and source delay context
 - **Interactive charts** — area and candlestick views with 1D / 5D / 1M / 3M / 6M / 1Y / 5Y ranges (via [TradingView Lightweight Charts](https://github.com/nickvdyck/lightweight-charts))
 - **Financial metrics** — revenue, margins, cash flow, analyst targets
 - **Company profiles** — sector, industry, HQ, CEO, business summary
 - **Latest news** — headline feed per ticker
 - **Instant search** — type-ahead search for stocks, ETFs, and indices
 
-No API keys required — data is fetched server-side from Yahoo Finance.
+No API keys required for market data — data is fetched server-side from Yahoo Finance. Quotes may be delayed depending on the source and exchange; verify important prices with your broker or data provider.
 
 ---
 
@@ -78,10 +78,11 @@ The app is now live at [http://localhost:3000](http://localhost:3000).
 
 ### Environment variables (optional)
 
-| Variable   | Default   | Description              |
-| ---------- | --------- | ------------------------ |
-| `PORT`     | `3000`    | Port the server binds to |
-| `HOSTNAME` | `0.0.0.0` | Host the server binds to |
+| Variable                         | Default   | Description                                      |
+| -------------------------------- | --------- | ------------------------------------------------ |
+| `PORT`                           | `3000`    | Port the server binds to                         |
+| `HOSTNAME`                       | `0.0.0.0` | Host the server binds to                         |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID`  | unset     | Optional Google Analytics measurement ID         |
 
 Example:
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import StockView from "./StockView";
 import { formatCurrency, formatLargeNumber } from "@/lib/format";
 import { siteUrl } from "@/lib/markets";
+import { getAssetClassLabel } from "@/lib/asset-labels";
 import { fetchStockSnapshot, getDisplayName } from "@/lib/stock-data";
 
 export const revalidate = 300;
@@ -16,6 +17,7 @@ export async function generateMetadata({
   const snapshot = await fetchStockSnapshot(symbol);
   const quote = snapshot?.quote;
   const displayName = getDisplayName(quote);
+  const assetClass = getAssetClassLabel(quote?.quoteType);
   const exchange = quote?.fullExchangeName || quote?.exchange;
   const price = quote?.regularMarketPrice
     ? ` at ${formatCurrency(quote.regularMarketPrice)}`
@@ -23,20 +25,20 @@ export async function generateMetadata({
   const exchangeCopy = exchange ? ` on ${exchange}` : "";
 
   return {
-    title: `${displayName} (${symbol}) Stock Chart`,
-    description: `View the ${displayName} (${symbol}) stock chart${price}${exchangeCopy}. Free candlestick charts, price history, key statistics, market data, and news.`,
+    title: `${displayName} (${symbol}) ${assetClass} Chart`,
+    description: `View the ${displayName} (${symbol}) ${assetClass.toLowerCase()} chart${price}${exchangeCopy}. Free candlestick charts, price history, key statistics, market data, and news.`,
     alternates: {
       canonical: `/stock/${encodeURIComponent(symbol)}`,
     },
     openGraph: {
-      title: `${displayName} (${symbol}) Stock Chart`,
+      title: `${displayName} (${symbol}) ${assetClass} Chart`,
       description: `Free interactive ${symbol} chart with price, volume, key statistics, market data, and news.`,
       url: `/stock/${encodeURIComponent(symbol)}`,
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${displayName} (${symbol}) Stock Chart`,
+      title: `${displayName} (${symbol}) ${assetClass} Chart`,
       description: `Free interactive ${symbol} chart with price, volume, key statistics, market data, and news.`,
     },
   };
@@ -58,10 +60,11 @@ async function StockPageContent({ symbol }: { symbol: string }) {
   const quote = snapshot?.quote ?? null;
   const summary = snapshot?.summary ?? null;
   const displayName = getDisplayName(quote);
+  const assetClass = getAssetClassLabel(quote?.quoteType);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: `${displayName} (${symbol}) Stock Chart`,
+    name: `${displayName} (${symbol}) ${assetClass} Chart`,
     url: `${siteUrl}/stock/${encodeURIComponent(symbol)}`,
     description: `Free professional chart, quote data, key statistics, and news for ${displayName}.`,
     about: {
@@ -74,8 +77,8 @@ async function StockPageContent({ symbol }: { symbol: string }) {
       name: `${symbol} price history and market data`,
       description: `Price, volume, market capitalization, and chart data for ${displayName}.`,
       keywords: [
-        `${symbol} stock chart`,
-        `${displayName} stock price`,
+        `${symbol} ${assetClass.toLowerCase()} chart`,
+        `${displayName} price`,
         `${symbol} candlestick chart`,
         `${symbol} market data`,
       ],

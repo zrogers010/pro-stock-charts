@@ -7,22 +7,24 @@ import {
 } from "@/lib/markets";
 import { educationArticles } from "@/lib/education";
 import { assetToSlug } from "@/lib/market-pages";
+import { seoReviewedAt } from "@/lib/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-
-  const staticRoutes = ["", "data-disclaimer", ...featuredHubSlugs.map((slug) => slug)].map(
-    (path) => ({
+  const staticRoutes = [
+    "",
+    "data-disclaimer",
+    "privacy",
+    "terms",
+    ...featuredHubSlugs.map((slug) => slug),
+  ].map((path) => ({
       url: `${siteUrl}/${path}`,
-      lastModified: now,
+      lastModified: seoReviewedAt,
       changeFrequency: "weekly" as const,
       priority: path === "" ? 1 : 0.8,
-    })
-  );
+    }));
 
   const stockRoutes = stockPageSymbols.map((symbol) => ({
     url: `${siteUrl}/stock/${encodeURIComponent(symbol)}`,
-    lastModified: now,
     changeFrequency: "hourly" as const,
     priority: 0.9,
   }));
@@ -30,7 +32,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const curatedRoutes = marketHubs.flatMap((hub) =>
     hub.assets.slice(0, 6).map((asset) => ({
       url: `${siteUrl}/${hub.slug}/${assetToSlug(asset)}`,
-      lastModified: now,
+      lastModified: seoReviewedAt,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     }))
@@ -38,7 +40,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const educationRoutes = educationArticles.map((article) => ({
     url: `${siteUrl}/learn/${article.slug}`,
-    lastModified: now,
+    lastModified: seoReviewedAt,
     changeFrequency: "monthly" as const,
     priority: 0.65,
   }));

@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import { educationArticles, getEducationArticle } from "@/lib/education";
-import { siteUrl } from "@/lib/markets";
+import { coreAssets, siteUrl } from "@/lib/markets";
+import { canonicalPath } from "@/lib/seo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -21,12 +22,12 @@ export function generateMetadata({
     title: article.title,
     description: article.description,
     alternates: {
-      canonical: `/learn/${article.slug}`,
+      canonical: canonicalPath(`/learn/${article.slug}`),
     },
     openGraph: {
       title: article.title,
       description: article.description,
-      url: `/learn/${article.slug}`,
+      url: canonicalPath(`/learn/${article.slug}`),
       type: "article",
     },
     twitter: {
@@ -99,6 +100,28 @@ export default function LearnArticlePage({
             </section>
           ))}
         </div>
+
+        <section className="mt-12 border-t border-zinc-800/60 pt-8">
+          <h2 className="text-2xl font-semibold text-white tracking-tight mb-3">
+            Practice with real charts
+          </h2>
+          <p className="text-zinc-400 leading-relaxed mb-4">
+            Apply the concepts on live market pages with source and delay
+            disclosures. These links point to selected public chart pages rather
+            than generated ticker spam.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {coreAssets.slice(0, 6).map((asset) => (
+              <Link
+                key={asset.symbol}
+                href={`/stock/${asset.symbol}`}
+                className="rounded-lg border border-zinc-800/70 bg-zinc-900/50 px-3 py-2 text-sm font-medium text-zinc-300 hover:border-zinc-700 hover:text-white"
+              >
+                {asset.symbol} chart
+              </Link>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );

@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import { canonicalPath } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -6,7 +7,14 @@ export const metadata: Metadata = {
   description:
     "Important information about market data, quote delays, educational use, and investment advice on ProStockCharts.",
   alternates: {
-    canonical: "/data-disclaimer",
+    canonical: canonicalPath("/data-disclaimer"),
+  },
+  openGraph: {
+    title: "Data Disclaimer",
+    description:
+      "Important information about market data, quote delays, educational use, and investment advice on ProStockCharts.",
+    url: canonicalPath("/data-disclaimer"),
+    type: "website",
   },
 };
 

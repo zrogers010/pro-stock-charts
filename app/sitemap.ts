@@ -11,7 +11,7 @@ import { assetToSlug } from "@/lib/market-pages";
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  const staticRoutes = ["", ...featuredHubSlugs.map((slug) => slug)].map(
+  const staticRoutes = ["", "data-disclaimer", ...featuredHubSlugs.map((slug) => slug)].map(
     (path) => ({
       url: `${siteUrl}/${path}`,
       lastModified: now,

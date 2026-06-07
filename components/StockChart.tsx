@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createChart, ColorType, IChartApi } from "lightweight-charts";
 import { trackEvent } from "@/lib/analytics";
+import { formatCurrency, formatNumber } from "@/lib/format";
 
 interface ChartDataPoint {
   time: string | number;
@@ -33,7 +34,9 @@ export default function StockChart({ symbol }: { symbol: string }) {
   const [chartType, setChartType] = useState<ChartType>("area");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hasHydratedUrlState, setHasHydratedUrlState] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -59,12 +62,17 @@ export default function StockChart({ symbol }: { symbol: string }) {
     let cancelled = false;
     const fetchData = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const res = await fetch(`/api/chart/${symbol}?range=${activeRange}`);
+        if (!res.ok) throw new Error("Chart request failed");
         const json = await res.json();
         if (!cancelled) setChartData(json.data || []);
       } catch {
-        if (!cancelled) setChartData([]);
+        if (!cancelled) {
+          setChartData([]);
+          setError("Chart data is temporarily unavailable.");
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -73,11 +81,19 @@ export default function StockChart({ symbol }: { symbol: string }) {
     return () => {
       cancelled = true;
     };
-  }, [symbol, activeRange]);
+  }, [symbol, activeRange, retryCount]);
 
   // Render chart
   useEffect(() => {
-    if (!chartContainerRef.current || chartData.length === 0) return;
+    if (!chartContainerRef.current) return;
+
+    if (chartData.length === 0) {
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
+      return;
+    }
 
     // Remove existing chart
     if (chartRef.current) {
@@ -201,9 +217,10 @@ export default function StockChart({ symbol }: { symbol: string }) {
     chart.timeScale().fitContent();
 
     // Double-click to reset zoom
-    container.addEventListener("dblclick", () => {
+    const handleDoubleClick = () => {
       chart.timeScale().fitContent();
-    });
+    };
+    container.addEventListener("dblclick", handleDoubleClick);
 
     // Resize
     const handleResize = () => {
@@ -212,6 +229,7 @@ export default function StockChart({ symbol }: { symbol: string }) {
     window.addEventListener("resize", handleResize);
 
     return () => {
+      container.removeEventListener("dblclick", handleDoubleClick);
       window.removeEventListener("resize", handleResize);
       chart.remove();
       chartRef.current = null;
@@ -268,10 +286,12 @@ export default function StockChart({ symbol }: { symbol: string }) {
     [chartData, symbol, activeRange]
   );
 
+  const latestPoint = chartData[chartData.length - 1];
+
   return (
     <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-0.5">
+      <div className="flex flex-col gap-3 px-4 pt-4 pb-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-0.5">
           {timeRanges.map((range) => (
             <button
               key={range.value}
@@ -333,26 +353,65 @@ export default function StockChart({ symbol }: { symbol: string }) {
             <div className="w-6 h-6 border-2 border-zinc-700 border-t-blue-400 rounded-full animate-spin" />
           </div>
         )}
+        {!isLoading && (error || chartData.length === 0) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#09090b]/80 z-10 px-6 text-center">
+            <div>
+              <div className="text-sm font-semibold text-white">
+                {error ? "Chart data unavailable" : "No chart data found"}
+              </div>
+              <p className="mt-1 text-xs text-zinc-500">
+                {error ||
+                  "The data source did not return usable OHLC data for this range."}
+              </p>
+              <button
+                onClick={() => setRetryCount((count) => count + 1)}
+                className="mt-4 rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
         <div ref={chartContainerRef} className="w-full" style={{ height: 480 }} />
       </div>
       {chartData.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 border-t border-zinc-800/30">
-          <span className="text-[11px] text-zinc-600">Export</span>
-          <button
-            onClick={() => download("csv")}
-            className="text-[11px] text-zinc-500 hover:text-blue-400 transition-colors"
-          >
-            CSV
-          </button>
-          <span className="text-zinc-800">·</span>
-          <button
-            onClick={() => download("json")}
-            className="text-[11px] text-zinc-500 hover:text-blue-400 transition-colors"
-          >
-            JSON
-          </button>
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-2 border-t border-zinc-800/30 px-4 py-3 text-xs sm:grid-cols-5">
+            <ChartStat label="Open" value={formatCurrency(latestPoint.open)} />
+            <ChartStat label="High" value={formatCurrency(latestPoint.high)} />
+            <ChartStat label="Low" value={formatCurrency(latestPoint.low)} />
+            <ChartStat label="Close" value={formatCurrency(latestPoint.close)} />
+            <ChartStat label="Volume" value={formatNumber(latestPoint.volume)} />
+          </div>
+          <div className="flex items-center gap-3 px-4 py-2.5 border-t border-zinc-800/30">
+            <span className="text-[11px] text-zinc-600">Export</span>
+            <button
+              onClick={() => download("csv")}
+              className="text-[11px] text-zinc-500 hover:text-blue-400 transition-colors"
+            >
+              CSV
+            </button>
+            <span className="text-zinc-800">·</span>
+            <button
+              onClick={() => download("json")}
+              className="text-[11px] text-zinc-500 hover:text-blue-400 transition-colors"
+            >
+              JSON
+            </button>
+          </div>
+        </>
       )}
+    </div>
+  );
+}
+
+function ChartStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+        {label}
+      </div>
+      <div className="mt-1 font-medium tabular-nums text-zinc-300">{value}</div>
     </div>
   );
 }

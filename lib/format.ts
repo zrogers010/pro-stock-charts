@@ -47,6 +47,20 @@ export function formatDate(
   }).format(new Date(date));
 }
 
+export function formatDateTime(
+  date: Date | string | number | null | undefined
+): string {
+  if (date == null) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(new Date(date));
+}
+
 export function timeAgo(date: Date | string | number): string {
   const now = new Date();
   const d = new Date(typeof date === "number" ? date * 1000 : date);

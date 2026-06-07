@@ -65,6 +65,13 @@ function filterToLastTradingDay(quotes: any[]): any[] {
   );
 }
 
+function removeZeroVolumeTail(quotes: any[]): any[] {
+  const hasVolume = quotes.some((q) => (q.volume || 0) > 0);
+  if (!hasVolume) return quotes;
+
+  return quotes.filter((q) => (q.volume || 0) > 0);
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { symbol: string } }
@@ -87,21 +94,22 @@ export async function GET(
     const isCrypto = symbol.includes("-");
     if (range === "1d" && !isCrypto) {
       quotes = filterToLastTradingDay(quotes);
+      quotes = removeZeroVolumeTail(quotes);
     }
 
     const data = quotes.map((q: any) => {
-        const date = new Date(q.date);
-        return {
-          time: config.intraday
-            ? Math.floor(date.getTime() / 1000)
-            : date.toISOString().split("T")[0],
-          open: parseFloat(q.open.toFixed(2)),
-          high: parseFloat(q.high.toFixed(2)),
-          low: parseFloat(q.low.toFixed(2)),
-          close: parseFloat(q.close.toFixed(2)),
-          volume: q.volume || 0,
-        };
-      });
+      const date = new Date(q.date);
+      return {
+        time: config.intraday
+          ? Math.floor(date.getTime() / 1000)
+          : date.toISOString().split("T")[0],
+        open: parseFloat(q.open.toFixed(2)),
+        high: parseFloat(q.high.toFixed(2)),
+        low: parseFloat(q.low.toFixed(2)),
+        close: parseFloat(q.close.toFixed(2)),
+        volume: q.volume || 0,
+      };
+    });
 
     return NextResponse.json({ data });
   } catch (error) {

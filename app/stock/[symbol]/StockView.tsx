@@ -10,8 +10,10 @@ import {
   formatLargeNumber,
   formatPercent,
   formatNumber,
+  formatDateTime,
   timeAgo,
 } from "@/lib/format";
+import { getAssetClassLabel } from "@/lib/asset-labels";
 import { getRelatedAssets } from "@/lib/markets";
 import type { QuoteData, SummaryData } from "@/lib/stock-data";
 
@@ -145,12 +147,14 @@ export default function StockView({
   const keyStats = summary?.defaultKeyStatistics;
 
   const quoteType = quote.quoteType || "EQUITY";
+  const assetClass = getAssetClassLabel(quoteType);
   const isCrypto = quoteType === "CRYPTOCURRENCY";
   const isFuture = quoteType === "FUTURE" || quoteType === "COMMODITY";
   const isEquityLike = !isCrypto && !isFuture;
   const displayName = quote.longName || quote.shortName || symbol;
   const relatedAssets = getRelatedAssets(symbol);
   const isWatchlisted = watchlist.includes(symbol);
+  const disclosure = getQuoteDisclosure(quote);
 
   const toggleWatchlist = () => {
     const nextWatchlist = isWatchlisted
@@ -171,7 +175,7 @@ export default function StockView({
         <div className="mb-6">
           <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              {displayName} ({symbol}) Stock Chart
+              {displayName} ({symbol}) {assetClass} Chart
             </h1>
             {(isCrypto || isFuture) && (
               <AssetTypeBadge type={quoteType} />
@@ -206,9 +210,19 @@ export default function StockView({
             </button>
           </div>
           <p className="text-sm text-zinc-500 mt-3 max-w-3xl">
-            View the {displayName} stock chart with live price context, key
+            View the {displayName} {assetClass.toLowerCase()} chart with market data, key
             statistics, volume, financial metrics, latest news, and exportable
             historical data.
+          </p>
+          <div className="mt-4 grid gap-2 text-xs text-zinc-500 sm:grid-cols-3">
+            <DisclosureItem label="Source" value={disclosure.source} />
+            <DisclosureItem label="Quote Time" value={disclosure.time} />
+            <DisclosureItem label="Delay" value={disclosure.delay} />
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-zinc-600 max-w-4xl">
+            Market data is for research and educational use only, not
+            investment advice. Quotes may be delayed depending on the source and
+            exchange; verify important prices with your broker or data provider.
           </p>
         </div>
 
@@ -398,8 +412,8 @@ export default function StockView({
                   )}
                   {financial.recommendationKey && (
                     <MetricCard
-                      label="Recommendation"
-                      value={financial.recommendationKey.toUpperCase()}
+                      label="Analyst Consensus"
+                      value={formatConsensusLabel(financial.recommendationKey)}
                       accent
                     />
                   )}
@@ -597,6 +611,42 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <div className="text-sm text-white font-medium">{value}</div>
     </div>
   );
+}
+
+function DisclosureItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/35 px-3 py-2">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+        {label}
+      </div>
+      <div className="mt-1 text-xs font-medium text-zinc-300">{value}</div>
+    </div>
+  );
+}
+
+function getQuoteDisclosure(quote: QuoteData) {
+  const source = quote.quoteSourceName || "Yahoo Finance";
+  const delayMinutes = quote.exchangeDataDelayedBy;
+  const delay =
+    delayMinutes != null
+      ? delayMinutes === 0
+        ? "No source-reported delay"
+        : `${delayMinutes} min source-reported delay`
+      : "Delay varies by source/exchange";
+
+  return {
+    source,
+    time: formatDateTime(quote.regularMarketTime),
+    delay,
+  };
+}
+
+function formatConsensusLabel(value: string) {
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
 const assetTypeBadgeConfig: Record<string, { label: string; color: string }> = {

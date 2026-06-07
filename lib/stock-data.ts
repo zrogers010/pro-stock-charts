@@ -5,6 +5,11 @@ export interface QuoteData {
   shortName?: string;
   longName?: string;
   quoteType?: string;
+  quoteSourceName?: string;
+  regularMarketTime?: Date | string | number;
+  exchangeDataDelayedBy?: number;
+  sourceInterval?: number;
+  marketState?: string;
   regularMarketPrice?: number;
   regularMarketChange?: number;
   regularMarketChangePercent?: number;

@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "data-disclaimer",
     "compare",
     "market-movers",
+    "premium",
     "privacy",
     "terms",
     ...featuredHubSlugs.map((slug) => slug),

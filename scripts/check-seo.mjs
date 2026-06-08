@@ -42,6 +42,11 @@ const checks = [
     pattern: "\"compare\"",
   },
   {
+    name: "sitemap includes premium",
+    file: "app/sitemap.ts",
+    pattern: "\"premium\"",
+  },
+  {
     name: "sitemap includes comparison routes",
     file: "app/sitemap.ts",
     pattern: "comparisonRoutes",
@@ -70,6 +75,11 @@ const checks = [
     name: "footer links compare",
     file: "components/Footer.tsx",
     pattern: "href=\"/compare\"",
+  },
+  {
+    name: "footer links premium",
+    file: "components/Footer.tsx",
+    pattern: "href=\"/premium\"",
   },
   {
     name: "canonical policy is documented",

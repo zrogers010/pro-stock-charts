@@ -11,6 +11,8 @@ const requiredRoutes = [
   { path: "/stock/BTC-USD", text: "BTC-USD" },
   { path: "/data-disclaimer", text: "Data Disclaimer" },
   { path: "/market-movers", text: "Stock Market Movers" },
+  { path: "/compare", text: "Stock and ETF Comparisons" },
+  { path: "/compare/spy-vs-qqq", text: "SPY vs QQQ Comparison" },
 ];
 
 async function getAvailablePort() {

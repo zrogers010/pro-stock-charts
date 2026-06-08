@@ -37,6 +37,16 @@ const checks = [
     pattern: "\"market-movers\"",
   },
   {
+    name: "sitemap includes compare hub",
+    file: "app/sitemap.ts",
+    pattern: "\"compare\"",
+  },
+  {
+    name: "sitemap includes comparison routes",
+    file: "app/sitemap.ts",
+    pattern: "comparisonRoutes",
+  },
+  {
     name: "sitemap includes terms",
     file: "app/sitemap.ts",
     pattern: "\"terms\"",
@@ -55,6 +65,11 @@ const checks = [
     name: "footer links market movers",
     file: "components/Footer.tsx",
     pattern: "href=\"/market-movers\"",
+  },
+  {
+    name: "footer links compare",
+    file: "components/Footer.tsx",
+    pattern: "href=\"/compare\"",
   },
   {
     name: "canonical policy is documented",

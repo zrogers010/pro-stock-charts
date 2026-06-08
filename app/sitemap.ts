@@ -6,6 +6,7 @@ import {
   stockPageSymbols,
 } from "@/lib/markets";
 import { educationArticles } from "@/lib/education";
+import { comparisons } from "@/lib/comparisons";
 import { assetToSlug } from "@/lib/market-pages";
 import { seoReviewedAt } from "@/lib/seo";
 
@@ -13,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "data-disclaimer",
+    "compare",
     "market-movers",
     "privacy",
     "terms",
@@ -46,5 +48,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.65,
   }));
 
-  return [...staticRoutes, ...stockRoutes, ...curatedRoutes, ...educationRoutes];
+  const comparisonRoutes = comparisons.map((comparison) => ({
+    url: `${siteUrl}/compare/${comparison.slug}`,
+    lastModified: seoReviewedAt,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...stockRoutes,
+    ...curatedRoutes,
+    ...educationRoutes,
+    ...comparisonRoutes,
+  ];
 }

@@ -5,6 +5,8 @@ import { educationArticles } from "@/lib/education";
 import { marketHubs, siteUrl } from "@/lib/markets";
 import Link from "next/link";
 
+export const revalidate = 300;
+
 const popularStocks = [
   { symbol: "AAPL", name: "Apple Inc." },
   { symbol: "MSFT", name: "Microsoft Corp." },

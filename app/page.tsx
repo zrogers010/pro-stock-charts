@@ -208,6 +208,24 @@ export default function HomePage() {
         </section>
 
         <section className="max-w-4xl mx-auto px-4 pb-24">
+          <Link
+            href="/market-movers"
+            className="block bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all"
+          >
+            <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">
+              Daily Market Scan
+            </div>
+            <h2 className="text-xl font-semibold text-white tracking-tight mb-2">
+              Stock Market Movers
+            </h2>
+            <p className="text-sm text-zinc-500 leading-relaxed">
+              Review today&apos;s top gainers, top losers, and most active US
+              stocks, then open full chart pages for deeper research.
+            </p>
+          </Link>
+        </section>
+
+        <section className="max-w-4xl mx-auto px-4 pb-24">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">
             Learn Stock Charts
           </h2>

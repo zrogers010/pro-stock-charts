@@ -32,6 +32,11 @@ const checks = [
     pattern: "\"privacy\"",
   },
   {
+    name: "sitemap includes market movers",
+    file: "app/sitemap.ts",
+    pattern: "\"market-movers\"",
+  },
+  {
     name: "sitemap includes terms",
     file: "app/sitemap.ts",
     pattern: "\"terms\"",
@@ -45,6 +50,11 @@ const checks = [
     name: "footer links terms",
     file: "components/Footer.tsx",
     pattern: "href=\"/terms\"",
+  },
+  {
+    name: "footer links market movers",
+    file: "components/Footer.tsx",
+    pattern: "href=\"/market-movers\"",
   },
   {
     name: "canonical policy is documented",
@@ -74,4 +84,3 @@ if (failed) {
 }
 
 console.log(`SEO checks passed (${checks.length + 1})`);
-

@@ -26,6 +26,9 @@ export default function Footer() {
             <Link href="/terms" className="hover:text-zinc-300">
               Terms
             </Link>
+            <Link href="/market-movers" className="hover:text-zinc-300">
+              Market Movers
+            </Link>
             <Link href="/stocks" className="hover:text-zinc-300">
               Stocks
             </Link>

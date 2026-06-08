@@ -10,6 +10,7 @@ const requiredRoutes = [
   { path: "/stock/AAPL", text: "AAPL" },
   { path: "/stock/BTC-USD", text: "BTC-USD" },
   { path: "/data-disclaimer", text: "Data Disclaimer" },
+  { path: "/market-movers", text: "Stock Market Movers" },
 ];
 
 async function getAvailablePort() {

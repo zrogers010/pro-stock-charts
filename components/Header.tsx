@@ -38,6 +38,9 @@ export default function Header() {
             <Link href="/compare" className="hover:text-white transition-colors">
               Compare
             </Link>
+            <Link href="/premium" className="hover:text-white transition-colors">
+              Premium
+            </Link>
             <Link href="/stocks" className="hover:text-white transition-colors">
               Stocks
             </Link>

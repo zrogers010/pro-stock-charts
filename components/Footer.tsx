@@ -32,6 +32,9 @@ export default function Footer() {
             <Link href="/compare" className="hover:text-zinc-300">
               Compare
             </Link>
+            <Link href="/premium" className="hover:text-zinc-300">
+              Premium
+            </Link>
             <Link href="/stocks" className="hover:text-zinc-300">
               Stocks
             </Link>

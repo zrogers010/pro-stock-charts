@@ -13,6 +13,7 @@ const requiredRoutes = [
   { path: "/market-movers", text: "Stock Market Movers" },
   { path: "/compare", text: "Stock and ETF Comparisons" },
   { path: "/compare/spy-vs-qqq", text: "SPY vs QQQ Comparison" },
+  { path: "/premium", text: "Premium Research Workflows" },
 ];
 
 async function getAvailablePort() {

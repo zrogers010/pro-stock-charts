@@ -62,6 +62,41 @@ The app will be available on port **3000** by default.
 
 A multi-stage Dockerfile is included for lightweight production images.
 
+### One-command deploy
+
+After a PR is merged, the production host can pull `main`, rebuild the Docker
+image, replace the running container, and health-check the homepage with:
+
+```bash
+./scripts/deploy-docker.sh
+```
+
+The script builds the new image before removing the old container, so a failed
+build does not stop the currently running site.
+
+Defaults:
+
+- Branch: `main`
+- Image: `prostockcharts:latest`
+- Container: `prostockcharts`
+- Port mapping: `3000:3000`
+- Health check: `http://127.0.0.1:3000/`
+
+Useful overrides:
+
+```bash
+HOST_PORT=8080 CONTAINER_PORT=3000 ./scripts/deploy-docker.sh
+ENV_FILE=.env.production ./scripts/deploy-docker.sh
+NO_CACHE=1 ./scripts/deploy-docker.sh
+PULL_LATEST=0 ./scripts/deploy-docker.sh
+```
+
+Equivalent npm command:
+
+```bash
+npm run deploy:docker
+```
+
 ### Build the image
 
 ```bash

@@ -79,6 +79,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <style
+          id="critical-shell-styles"
+          dangerouslySetInnerHTML={{
+            __html:
+              "html,body{margin:0;min-height:100%;background:#09090b;color:#fafafa;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}",
+          }}
+        />
         {gaId && (
           <>
             <Script

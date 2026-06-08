@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "seo:check": "node scripts/check-seo.mjs",
+    "smoke:prod": "node scripts/smoke-production.mjs",
     "start": "next start"
   },
   "dependencies": {

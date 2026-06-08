@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "deploy:docker": "bash scripts/deploy-docker.sh",
     "seo:check": "node scripts/check-seo.mjs",
     "smoke:prod": "node scripts/smoke-production.mjs",
     "start": "next start"

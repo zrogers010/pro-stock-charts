@@ -25,7 +25,30 @@ const timeRanges = [
 ];
 
 type ChartType = "area" | "candle";
+type SavedChartLayout = {
+  range: string;
+  type: ChartType;
+  savedAt: string;
+};
+
 const validRangeValues = new Set(timeRanges.map((range) => range.value));
+
+function chartLayoutKey(symbol: string) {
+  return `psc_chart_layout_${symbol.toUpperCase()}`;
+}
+
+function readSavedLayout(symbol: string): SavedChartLayout | null {
+  try {
+    const stored = window.localStorage.getItem(chartLayoutKey(symbol));
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as SavedChartLayout;
+    if (!validRangeValues.has(parsed.range)) return null;
+    if (parsed.type !== "area" && parsed.type !== "candle") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
 export default function StockChart({ symbol }: { symbol: string }) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -37,16 +60,41 @@ export default function StockChart({ symbol }: { symbol: string }) {
   const [error, setError] = useState<string | null>(null);
   const [hasHydratedUrlState, setHasHydratedUrlState] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [savedLayout, setSavedLayout] = useState<SavedChartLayout | null>(null);
+  const [layoutNotice, setLayoutNotice] = useState<string | null>(null);
 
   useEffect(() => {
+    setHasHydratedUrlState(false);
+    setLayoutNotice(null);
+
     const params = new URLSearchParams(window.location.search);
     const range = params.get("range");
     const type = params.get("type");
+    const saved = readSavedLayout(symbol);
+    const hasUrlLayout =
+      Boolean(range && validRangeValues.has(range)) ||
+      type === "area" ||
+      type === "candle";
 
-    if (range && validRangeValues.has(range)) setActiveRange(range);
-    if (type === "area" || type === "candle") setChartType(type);
+    if (range && validRangeValues.has(range)) {
+      setActiveRange(range);
+    } else if (!hasUrlLayout && saved) {
+      setActiveRange(saved.range);
+    } else {
+      setActiveRange("1y");
+    }
+
+    if (type === "area" || type === "candle") {
+      setChartType(type);
+    } else if (!hasUrlLayout && saved) {
+      setChartType(saved.type);
+    } else {
+      setChartType("area");
+    }
+
+    setSavedLayout(saved);
     setHasHydratedUrlState(true);
-  }, []);
+  }, [symbol]);
 
   useEffect(() => {
     if (!hasHydratedUrlState) return;
@@ -287,6 +335,31 @@ export default function StockChart({ symbol }: { symbol: string }) {
   );
 
   const latestPoint = chartData[chartData.length - 1];
+  const activeLayoutIsSaved =
+    savedLayout?.range === activeRange && savedLayout.type === chartType;
+
+  const saveLayout = () => {
+    const nextLayout: SavedChartLayout = {
+      range: activeRange,
+      type: chartType,
+      savedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem(chartLayoutKey(symbol), JSON.stringify(nextLayout));
+    setSavedLayout(nextLayout);
+    setLayoutNotice("Saved locally. Account sync is coming later.");
+    trackEvent("chart_layout_save", {
+      symbol,
+      range: activeRange,
+      chart_type: chartType,
+    });
+  };
+
+  const clearLayout = () => {
+    window.localStorage.removeItem(chartLayoutKey(symbol));
+    setSavedLayout(null);
+    setLayoutNotice("Saved layout cleared.");
+    trackEvent("chart_layout_clear", { symbol });
+  };
 
   return (
     <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl overflow-hidden">
@@ -312,41 +385,71 @@ export default function StockChart({ symbol }: { symbol: string }) {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-0.5 bg-zinc-800/30 rounded-lg p-0.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-0.5 bg-zinc-800/30 rounded-lg p-0.5">
+            <button
+              onClick={() => {
+                setChartType("area");
+                trackEvent("chart_type_change", {
+                  symbol,
+                  chart_type: "area",
+                });
+              }}
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                chartType === "area"
+                  ? "bg-zinc-700 text-white"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Line
+            </button>
+            <button
+              onClick={() => {
+                setChartType("candle");
+                trackEvent("chart_type_change", {
+                  symbol,
+                  chart_type: "candle",
+                });
+              }}
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                chartType === "candle"
+                  ? "bg-zinc-700 text-white"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Candle
+            </button>
+          </div>
           <button
-            onClick={() => {
-              setChartType("area");
-              trackEvent("chart_type_change", {
-                symbol,
-                chart_type: "area",
-              });
-            }}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              chartType === "area"
-                ? "bg-zinc-700 text-white"
-                : "text-zinc-500 hover:text-zinc-300"
+            onClick={saveLayout}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              activeLayoutIsSaved
+                ? "bg-blue-500/15 text-blue-300"
+                : "bg-zinc-800/60 text-zinc-400 hover:text-white"
             }`}
           >
-            Line
-          </button>
-          <button
-            onClick={() => {
-              setChartType("candle");
-              trackEvent("chart_type_change", {
-                symbol,
-                chart_type: "candle",
-              });
-            }}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-              chartType === "candle"
-                ? "bg-zinc-700 text-white"
-                : "text-zinc-500 hover:text-zinc-300"
-            }`}
-          >
-            Candle
+            {activeLayoutIsSaved ? "Layout Saved" : "Save Layout"}
           </button>
         </div>
       </div>
+      {(savedLayout || layoutNotice) && (
+        <div className="flex flex-col gap-2 border-t border-zinc-800/30 px-4 py-2.5 text-[11px] text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            {layoutNotice ||
+              `Saved layout: ${savedLayout?.range.toUpperCase()} ${
+                savedLayout?.type === "candle" ? "Candle" : "Line"
+              }. Account sync is coming later.`}
+          </span>
+          {savedLayout && (
+            <button
+              onClick={clearLayout}
+              className="self-start text-zinc-500 transition-colors hover:text-zinc-300 sm:self-auto"
+            >
+              Clear saved layout
+            </button>
+          )}
+        </div>
+      )}
       <div className="relative">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-[#09090b]/60 z-10">

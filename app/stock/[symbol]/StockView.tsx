@@ -155,6 +155,13 @@ export default function StockView({
   const relatedAssets = getRelatedAssets(symbol);
   const isWatchlisted = watchlist.includes(symbol);
   const disclosure = getQuoteDisclosure(quote);
+  const researchCards = getResearchCards(assetClass, displayName, symbol);
+  const dataDefinitions = getDataDefinitions({
+    assetClass,
+    isCrypto,
+    isEquityLike,
+    isFuture,
+  });
 
   const toggleWatchlist = () => {
     const nextWatchlist = isWatchlisted
@@ -230,6 +237,22 @@ export default function StockView({
         <div className="mb-8">
           <StockChart symbol={symbol} />
         </div>
+
+        <section className="mb-8 grid gap-4 lg:grid-cols-3">
+          {researchCards.map((card) => (
+            <div
+              key={card.title}
+              className="bg-zinc-900/35 border border-zinc-800/40 rounded-2xl p-5"
+            >
+              <h2 className="text-sm font-semibold text-white tracking-tight mb-2">
+                {card.title}
+              </h2>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                {card.body}
+              </p>
+            </div>
+          ))}
+        </section>
 
         {/* ── Stats + Company ──────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -557,6 +580,48 @@ export default function StockView({
             </div>
           </section>
         )}
+
+        <section className="mb-12 grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 bg-zinc-900/35 border border-zinc-800/40 rounded-2xl p-5">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">
+              Data Definitions
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {dataDefinitions.map((item) => (
+                <div key={item.term}>
+                  <h3 className="text-sm font-semibold text-white mb-1">
+                    {item.term}
+                  </h3>
+                  <p className="text-sm text-zinc-500 leading-relaxed">
+                    {item.definition}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-zinc-900/35 border border-zinc-800/40 rounded-2xl p-5">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">
+              Continue Learning
+            </h2>
+            <div className="space-y-3">
+              {learnLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block rounded-xl border border-zinc-800/50 bg-zinc-900/40 px-4 py-3 hover:border-zinc-700 hover:bg-zinc-800/40"
+                >
+                  <div className="text-sm font-semibold text-white">
+                    {item.title}
+                  </div>
+                  <div className="mt-1 text-xs leading-relaxed text-zinc-500">
+                    {item.description}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );
@@ -648,6 +713,132 @@ function formatConsensusLabel(value: string) {
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
 }
+
+function getResearchCards(
+  assetClass: string,
+  displayName: string,
+  symbol: string
+) {
+  return [
+    {
+      title: `Read the ${symbol} trend first`,
+      body: `Use the range controls to compare short-term moves with the longer-term ${displayName} ${assetClass.toLowerCase()} chart. A move that looks large on 1D can look routine on a 1Y or 5Y chart.`,
+    },
+    {
+      title: "Check price with volume",
+      body:
+        "Volume helps show whether a move happened with broad participation or thin trading. Compare recent bars with the average volume and news context before drawing conclusions.",
+    },
+    {
+      title: "Verify before acting",
+      body:
+        "This page is built for research and education. Quotes, analyst fields, and news can be delayed or revised, so verify important prices with your broker or primary data provider.",
+    },
+  ];
+}
+
+function getDataDefinitions({
+  assetClass,
+  isCrypto,
+  isEquityLike,
+  isFuture,
+}: {
+  assetClass: string;
+  isCrypto: boolean;
+  isEquityLike: boolean;
+  isFuture: boolean;
+}) {
+  const common = [
+    {
+      term: "Previous close",
+      definition:
+        "The most recent prior regular-session close reported by the market data source.",
+    },
+    {
+      term: "Day range",
+      definition:
+        "The source-reported high and low for the current or most recent trading session.",
+    },
+    {
+      term: "Volume",
+      definition:
+        "The number of shares, units, contracts, or asset quantity reported as traded during the period.",
+    },
+    {
+      term: "Moving averages",
+      definition:
+        "The 50-day and 200-day averages smooth recent prices to give quick trend context.",
+    },
+  ];
+
+  if (isCrypto) {
+    return [
+      ...common,
+      {
+        term: "Circulating supply",
+        definition:
+          "The estimated number of coins or tokens currently circulating in the market.",
+      },
+      {
+        term: "24h volume",
+        definition:
+          "The source-reported trading activity across supported venues over roughly the last 24 hours.",
+      },
+    ];
+  }
+
+  if (isEquityLike) {
+    return [
+      ...common,
+      {
+        term: "Market cap",
+        definition:
+          "A company or fund size estimate based on price and shares outstanding when source data is available.",
+      },
+      {
+        term: "P/E ratio",
+        definition:
+          "Price divided by earnings per share. It is most useful when compared with peers and growth expectations.",
+      },
+    ];
+  }
+
+  if (isFuture) {
+    return [
+      ...common,
+      {
+        term: `${assetClass} contract`,
+        definition:
+          "A market instrument whose quoted price can reflect contract specifications, roll timing, and source conventions.",
+      },
+      {
+        term: "Source delay",
+        definition:
+          "Futures and commodities data can have exchange-specific delays or availability limits.",
+      },
+    ];
+  }
+
+  return common;
+}
+
+const learnLinks = [
+  {
+    href: "/learn/how-to-read-candlestick-charts",
+    title: "How to read candlesticks",
+    description: "Understand open, high, low, close, bodies, and wicks.",
+  },
+  {
+    href: "/learn/stock-chart-timeframes-explained",
+    title: "Chart timeframes explained",
+    description: "Know when to use 1D, 1M, 1Y, and 5Y views.",
+  },
+  {
+    href: "/learn/volume-on-stock-charts",
+    title: "Volume on stock charts",
+    description: "Use trading activity to add context to price moves.",
+  },
+];
 
 const assetTypeBadgeConfig: Record<string, { label: string; color: string }> = {
   CRYPTOCURRENCY: { label: "Crypto", color: "text-amber-400 bg-amber-400/10 border-amber-400/20" },

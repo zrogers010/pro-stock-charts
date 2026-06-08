@@ -32,6 +32,9 @@ export default function Header() {
             <SearchBox />
           </div>
           <nav className="hidden lg:flex items-center gap-4 text-sm text-zinc-500">
+            <Link href="/market-movers" className="hover:text-white transition-colors">
+              Movers
+            </Link>
             <Link href="/stocks" className="hover:text-white transition-colors">
               Stocks
             </Link>

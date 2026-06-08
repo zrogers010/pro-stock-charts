@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "data-disclaimer",
+    "market-movers",
     "privacy",
     "terms",
     ...featuredHubSlugs.map((slug) => slug),

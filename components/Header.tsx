@@ -35,6 +35,9 @@ export default function Header() {
             <Link href="/market-movers" className="hover:text-white transition-colors">
               Movers
             </Link>
+            <Link href="/compare" className="hover:text-white transition-colors">
+              Compare
+            </Link>
             <Link href="/stocks" className="hover:text-white transition-colors">
               Stocks
             </Link>

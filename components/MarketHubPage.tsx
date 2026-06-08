@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Link from "next/link";
 import type { MarketHub } from "@/lib/markets";
+import { comparisons } from "@/lib/comparisons";
 
 export default function MarketHubPage({ hub }: { hub: MarketHub }) {
   return (
@@ -43,6 +44,37 @@ export default function MarketHubPage({ hub }: { hub: MarketHub }) {
             </Link>
           ))}
         </section>
+
+        {hub.slug === "etfs" && (
+          <section className="mb-12 rounded-3xl border border-zinc-800/40 bg-zinc-900/40 p-6 sm:p-8">
+            <h2 className="mb-3 text-2xl font-semibold tracking-tight text-white">
+              Compare popular ETFs
+            </h2>
+            <p className="mb-5 max-w-3xl text-zinc-400 leading-relaxed">
+              Use curated ETF comparisons to frame broad-market exposure,
+              Nasdaq 100 exposure, total-market exposure, and small-cap
+              participation before opening the full charts.
+            </p>
+            <div className="grid gap-3 md:grid-cols-3">
+              {comparisons
+                .filter((comparison) => comparison.category === "ETF")
+                .map((comparison) => (
+                  <Link
+                    key={comparison.slug}
+                    href={`/compare/${comparison.slug}`}
+                    className="rounded-2xl border border-zinc-800/50 bg-zinc-950/30 p-4 transition-all hover:border-zinc-700/60 hover:bg-zinc-800/50"
+                  >
+                    <div className="font-semibold text-white">
+                      {comparison.title}
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                      {comparison.description}
+                    </p>
+                  </Link>
+                ))}
+            </div>
+          </section>
+        )}
 
         <section className="bg-zinc-900/40 border border-zinc-800/40 rounded-3xl p-6 sm:p-8">
           <h2 className="text-2xl font-semibold text-white tracking-tight mb-3">

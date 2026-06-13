@@ -42,6 +42,16 @@ const checks = [
     pattern: "\"compare\"",
   },
   {
+    name: "sitemap includes indicators hub",
+    file: "app/sitemap.ts",
+    pattern: "\"indicators\"",
+  },
+  {
+    name: "sitemap includes indicator routes",
+    file: "app/sitemap.ts",
+    pattern: "indicatorRoutes",
+  },
+  {
     name: "sitemap includes premium",
     file: "app/sitemap.ts",
     pattern: "\"premium\"",
@@ -75,6 +85,11 @@ const checks = [
     name: "footer links compare",
     file: "components/Footer.tsx",
     pattern: "href=\"/compare\"",
+  },
+  {
+    name: "footer links indicators",
+    file: "components/Footer.tsx",
+    pattern: "href=\"/indicators\"",
   },
   {
     name: "footer links premium",

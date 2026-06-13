@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import SavedMarkets from "@/components/SavedMarkets";
 import SearchBox from "@/components/SearchBox";
 import { educationArticles } from "@/lib/education";
+import { indicatorArticles } from "@/lib/indicators";
 import { marketHubs, siteUrl } from "@/lib/markets";
 import Link from "next/link";
 
@@ -279,6 +280,36 @@ export default function HomePage() {
                   {article.title}
                 </div>
                 <p className="text-sm text-zinc-500 line-clamp-2">
+                  {article.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="max-w-4xl mx-auto px-4 pb-24">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+              Technical Indicators
+            </h2>
+            <Link
+              href="/indicators"
+              className="text-sm font-medium text-blue-400 hover:text-blue-300"
+            >
+              View all
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {indicatorArticles.map((article) => (
+              <Link
+                key={article.slug}
+                href={`/indicators/${article.slug}`}
+                className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all"
+              >
+                <div className="text-sm font-semibold text-white mb-2">
+                  {article.shortTitle}
+                </div>
+                <p className="text-sm text-zinc-500 line-clamp-3">
                   {article.description}
                 </p>
               </Link>

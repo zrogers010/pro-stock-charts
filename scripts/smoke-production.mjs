@@ -13,6 +13,8 @@ const requiredRoutes = [
   { path: "/market-movers", text: "Stock Market Movers" },
   { path: "/compare", text: "Stock and ETF Comparisons" },
   { path: "/compare/spy-vs-qqq", text: "SPY vs QQQ Comparison" },
+  { path: "/tools", text: "Market Research Tools" },
+  { path: "/tools/position-size-calculator", text: "Position Size Calculator" },
   { path: "/premium", text: "Premium Research Workflows" },
 ];
 

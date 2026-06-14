@@ -67,6 +67,16 @@ const checks = [
     pattern: "\"terms\"",
   },
   {
+    name: "sitemap includes tools hub",
+    file: "app/sitemap.ts",
+    pattern: "\"tools\"",
+  },
+  {
+    name: "sitemap includes position size calculator",
+    file: "app/sitemap.ts",
+    pattern: "\"tools/position-size-calculator\"",
+  },
+  {
     name: "footer links privacy",
     file: "components/Footer.tsx",
     pattern: "href=\"/privacy\"",
@@ -95,6 +105,11 @@ const checks = [
     name: "footer links premium",
     file: "components/Footer.tsx",
     pattern: "href=\"/premium\"",
+  },
+  {
+    name: "footer links tools",
+    file: "components/Footer.tsx",
+    pattern: "href=\"/tools\"",
   },
   {
     name: "canonical policy is documented",

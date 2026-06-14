@@ -41,6 +41,9 @@ export default function Header() {
             <Link href="/indicators" className="hover:text-white transition-colors">
               Indicators
             </Link>
+            <Link href="/tools" className="hover:text-white transition-colors">
+              Tools
+            </Link>
             <Link href="/premium" className="hover:text-white transition-colors">
               Premium
             </Link>

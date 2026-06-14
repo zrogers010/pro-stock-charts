@@ -21,6 +21,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "premium",
     "privacy",
     "terms",
+    "tools",
+    "tools/position-size-calculator",
     ...featuredHubSlugs.map((slug) => slug),
   ].map((path) => ({
       url: `${siteUrl}/${path}`,

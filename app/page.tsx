@@ -262,6 +262,21 @@ export default function HomePage() {
                 quote snapshots and direct chart links.
               </p>
             </Link>
+            <Link
+              href="/tools/position-size-calculator"
+              className="block bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all"
+            >
+              <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">
+                Tools
+              </div>
+              <h2 className="text-xl font-semibold text-white tracking-tight mb-2">
+                Position Size Calculator
+              </h2>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Estimate shares, units, and capital at risk from account size,
+                risk percentage, entry price, and stop price.
+              </p>
+            </Link>
           </div>
         </section>
 

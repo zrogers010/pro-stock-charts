@@ -35,6 +35,9 @@ export default function Footer() {
             <Link href="/indicators" className="hover:text-zinc-300">
               Indicators
             </Link>
+            <Link href="/tools" className="hover:text-zinc-300">
+              Tools
+            </Link>
             <Link href="/premium" className="hover:text-zinc-300">
               Premium
             </Link>

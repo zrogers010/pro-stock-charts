@@ -77,6 +77,11 @@ const checks = [
     pattern: "\"tools/position-size-calculator\"",
   },
   {
+    name: "sitemap includes risk reward calculator",
+    file: "app/sitemap.ts",
+    pattern: "\"tools/risk-reward-calculator\"",
+  },
+  {
     name: "footer links privacy",
     file: "components/Footer.tsx",
     pattern: "href=\"/privacy\"",
@@ -110,6 +115,11 @@ const checks = [
     name: "footer links tools",
     file: "components/Footer.tsx",
     pattern: "href=\"/tools\"",
+  },
+  {
+    name: "tools list includes risk reward calculator",
+    file: "lib/tools.ts",
+    pattern: "risk-reward-calculator",
   },
   {
     name: "canonical policy is documented",

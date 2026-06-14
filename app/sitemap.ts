@@ -23,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "terms",
     "tools",
     "tools/position-size-calculator",
+    "tools/risk-reward-calculator",
     ...featuredHubSlugs.map((slug) => slug),
   ].map((path) => ({
       url: `${siteUrl}/${path}`,

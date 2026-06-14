@@ -15,6 +15,7 @@ const requiredRoutes = [
   { path: "/compare/spy-vs-qqq", text: "SPY vs QQQ Comparison" },
   { path: "/tools", text: "Market Research Tools" },
   { path: "/tools/position-size-calculator", text: "Position Size Calculator" },
+  { path: "/tools/risk-reward-calculator", text: "Risk Reward Calculator" },
   { path: "/premium", text: "Premium Research Workflows" },
 ];
 

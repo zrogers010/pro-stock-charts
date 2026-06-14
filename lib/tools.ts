@@ -17,4 +17,13 @@ export const researchTools: ResearchTool[] = [
     category: "Risk planning",
     href: "/tools/position-size-calculator",
   },
+  {
+    slug: "risk-reward-calculator",
+    title: "Risk Reward Calculator",
+    shortTitle: "Risk Reward",
+    description:
+      "Compare planned risk and potential reward from entry price, stop price, target price, and position size.",
+    category: "Trade planning",
+    href: "/tools/risk-reward-calculator",
+  },
 ];

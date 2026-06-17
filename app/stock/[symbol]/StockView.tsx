@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Header from "@/components/Header";
-import StockChart from "@/components/StockChart";
 import { trackEvent } from "@/lib/analytics";
 import {
   formatCurrency,
@@ -16,6 +16,11 @@ import {
 import { getAssetClassLabel } from "@/lib/asset-labels";
 import { getRelatedAssets } from "@/lib/markets";
 import type { QuoteData, SummaryData } from "@/lib/stock-data";
+
+const StockChart = dynamic(() => import("@/components/StockChart"), {
+  ssr: false,
+  loading: () => <StockChartShell />,
+});
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -674,6 +679,39 @@ function InfoItem({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[11px] text-zinc-500 mb-0.5">{label}</div>
       <div className="text-sm text-white font-medium">{value}</div>
+    </div>
+  );
+}
+
+function StockChartShell() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-zinc-800/40 bg-zinc-900/40">
+      <div className="flex flex-col gap-3 px-4 pb-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-1">
+          {["1D", "5D", "1M", "3M", "6M", "1Y", "5Y"].map((label) => (
+            <div
+              key={label}
+              className="h-7 w-10 rounded-lg bg-zinc-800/50"
+              aria-hidden="true"
+            />
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <div className="h-7 w-20 rounded-lg bg-zinc-800/50" />
+          <div className="h-7 w-24 rounded-lg bg-zinc-800/50" />
+        </div>
+      </div>
+      <div className="relative h-[480px] border-t border-zinc-800/30">
+        <div className="absolute inset-x-6 top-8 h-px bg-zinc-800/50" />
+        <div className="absolute inset-x-6 top-28 h-px bg-zinc-800/40" />
+        <div className="absolute inset-x-6 top-48 h-px bg-zinc-800/40" />
+        <div className="absolute inset-x-6 top-72 h-px bg-zinc-800/40" />
+        <div className="absolute inset-x-6 bottom-16 h-px bg-zinc-800/50" />
+        <div className="absolute left-6 right-6 top-24 h-36 rounded-full bg-blue-500/5 blur-3xl" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-400" />
+        </div>
+      </div>
     </div>
   );
 }

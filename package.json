@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "deploy:docker": "bash scripts/deploy-docker.sh",
+    "perf:budget": "node scripts/check-performance-budget.mjs",
     "seo:check": "node scripts/check-seo.mjs",
     "smoke:prod": "node scripts/smoke-production.mjs",
     "start": "next start"

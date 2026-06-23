@@ -55,14 +55,21 @@ export default function SearchBox({
     };
   }, [query, search]);
 
-  const navigate = (symbol: string) => {
+  const navigate = (
+    symbol: string,
+    source: "manual" | "keyboard_suggestion" | "click_suggestion" =
+      selectedIndex >= 0 ? "keyboard_suggestion" : "manual"
+  ) => {
     setIsOpen(false);
     setQuery("");
     trackEvent("search_submit", {
       symbol,
       query,
-      source: selectedIndex >= 0 ? "suggestion" : "manual",
+      source,
     });
+    if (source === "click_suggestion") {
+      trackEvent("search_result_click", { symbol, query });
+    }
     router.push(`/stock/${symbol}`);
   };
 
@@ -76,9 +83,9 @@ export default function SearchBox({
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (selectedIndex >= 0 && results[selectedIndex]) {
-        navigate(results[selectedIndex].symbol);
+        navigate(results[selectedIndex].symbol, "keyboard_suggestion");
       } else if (query.trim()) {
-        navigate(query.trim().toUpperCase());
+        navigate(query.trim().toUpperCase(), "manual");
       }
     } else if (e.key === "Escape") {
       setIsOpen(false);
@@ -166,7 +173,7 @@ export default function SearchBox({
           {results.map((result, index) => (
             <button
               key={result.symbol}
-              onClick={() => navigate(result.symbol)}
+              onClick={() => navigate(result.symbol, "click_suggestion")}
               className={`w-full px-4 py-3 flex items-center justify-between transition-colors text-left ${
                 index === selectedIndex
                   ? "bg-zinc-800"

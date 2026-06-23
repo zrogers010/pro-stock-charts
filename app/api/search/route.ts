@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { noStoreHeaders, searchCacheHeaders } from "@/lib/api-cache";
 import yahooFinance from "@/lib/yahoo";
 
 export async function GET(request: NextRequest) {
-  const q = request.nextUrl.searchParams.get("q");
-  if (!q) return NextResponse.json({ results: [] });
+  const q = request.nextUrl.searchParams.get("q")?.trim() || "";
+  if (!q) return NextResponse.json({ results: [] }, { headers: searchCacheHeaders });
+  if (q.length > 40) {
+    return NextResponse.json(
+      { results: [], error: "Search query is too long" },
+      { status: 400, headers: noStoreHeaders }
+    );
+  }
 
   try {
     const result = await yahooFinance.search(q, {
@@ -31,9 +38,12 @@ export async function GET(request: NextRequest) {
         exchange: item.exchDisp || item.exchange || "",
       }));
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ results }, { headers: searchCacheHeaders });
   } catch (error) {
     console.error("Search error:", error);
-    return NextResponse.json({ results: [] });
+    return NextResponse.json(
+      { results: [], error: "Search temporarily unavailable" },
+      { status: 502, headers: noStoreHeaders }
+    );
   }
 }

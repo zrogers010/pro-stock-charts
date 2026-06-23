@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import Footer from "@/components/Footer";
+import WebVitalsReporter from "@/components/WebVitalsReporter";
 import { siteUrl } from "@/lib/markets";
 import { canonicalPath, defaultOgImage } from "@/lib/seo";
 import "./globals.css";
@@ -104,6 +105,7 @@ export default function RootLayout({
         )}
       </head>
       <body className="min-h-screen flex flex-col">
+        <WebVitalsReporter />
         <div className="flex-1">{children}</div>
         <Footer />
       </body>

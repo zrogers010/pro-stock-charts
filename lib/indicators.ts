@@ -123,6 +123,117 @@ export const indicatorArticles: IndicatorArticle[] = [
       "Using bands without support, resistance, or volume context",
     ],
   },
+  {
+    slug: "moving-averages",
+    title: "Moving Averages Explained",
+    shortTitle: "Moving Averages",
+    description:
+      "Learn how simple and exponential moving averages smooth price action, frame trend direction, and help traders compare short-term and long-term momentum.",
+    readTime: "6 min read",
+    formula:
+      "SMA = sum of closing prices / number of periods; EMA weights recent prices more heavily",
+    bestFor: [
+      "Smoothing noisy price action",
+      "Comparing short-term and long-term trend direction",
+      "Finding dynamic areas to research for support or resistance",
+    ],
+    sections: [
+      {
+        heading: "What moving averages measure",
+        body:
+          "A moving average smooths a series of prices into one trend line. A simple moving average gives each period the same weight, while an exponential moving average reacts faster by giving recent prices more influence.",
+      },
+      {
+        heading: "How traders read them",
+        body:
+          "Price above a rising average can point to constructive trend pressure, while price below a falling average can point to weakness. Crosses between shorter and longer averages can flag momentum changes, but they often lag after sharp moves.",
+      },
+      {
+        heading: "Why timeframe matters",
+        body:
+          "A 20-day average, 50-day average, and 200-day average answer different questions. Shorter averages react quickly but whipsaw more often; longer averages respond slowly but can help frame the primary trend.",
+      },
+    ],
+    pitfalls: [
+      "Treating every moving-average cross as a trade signal",
+      "Using the same length across every market and timeframe",
+      "Ignoring volume, volatility, and broader market context",
+    ],
+  },
+  {
+    slug: "volume-indicators",
+    title: "Volume Indicators Explained",
+    shortTitle: "Volume Indicators",
+    description:
+      "Understand how volume indicators help confirm price moves, spot unusual participation, and add context to breakouts or reversals.",
+    readTime: "6 min read",
+    formula:
+      "Volume indicators compare current traded shares or contracts against prior activity, averages, or price direction",
+    bestFor: [
+      "Confirming whether price moves have participation",
+      "Finding unusual activity during breakouts or breakdowns",
+      "Comparing liquidity before relying on a chart pattern",
+    ],
+    sections: [
+      {
+        heading: "What volume indicators measure",
+        body:
+          "Volume indicators study participation. They can show whether a price move happened with expanding activity, normal activity, or weak participation that deserves more caution.",
+      },
+      {
+        heading: "How traders read them",
+        body:
+          "Rising price with above-average volume can suggest stronger demand, while falling price with heavy volume can show aggressive selling. Low-volume moves can still matter, but they are easier to question without confirmation.",
+      },
+      {
+        heading: "Why context matters",
+        body:
+          "Volume should be compared with the instrument's normal liquidity, market session, news cycle, and broader trend. A volume spike near earnings, ETF rebalance dates, or major macro news may carry a different meaning than ordinary trading.",
+      },
+    ],
+    pitfalls: [
+      "Comparing raw volume across unrelated symbols",
+      "Ignoring scheduled news or earnings catalysts",
+      "Assuming high volume always means bullish demand",
+    ],
+  },
+  {
+    slug: "support-and-resistance",
+    title: "Support and Resistance Explained",
+    shortTitle: "Support and Resistance",
+    description:
+      "Learn how traders use prior highs, lows, ranges, and moving averages to frame support, resistance, breakout, and breakdown research.",
+    readTime: "6 min read",
+    formula:
+      "Support and resistance are chart zones, not fixed formulas; they are often based on prior highs, lows, ranges, and trendlines",
+    bestFor: [
+      "Framing key chart levels before planning a trade",
+      "Comparing breakout and breakdown areas",
+      "Setting research context for risk and reward calculators",
+    ],
+    sections: [
+      {
+        heading: "What support and resistance show",
+        body:
+          "Support is an area where buyers have previously absorbed selling pressure, while resistance is an area where sellers have previously limited advances. These areas are better treated as zones than exact prices.",
+      },
+      {
+        heading: "How traders read them",
+        body:
+          "A breakout above resistance can show demand improving, while a breakdown below support can show supply taking control. Retests can help traders study whether the old level is still respected or has changed roles.",
+      },
+      {
+        heading: "Why levels fail",
+        body:
+          "Markets often overshoot visible levels, especially around news or broad volatility. False breakouts and failed breakdowns are common, so support and resistance should be checked against volume, trend, timeframe, and risk.",
+      },
+    ],
+    pitfalls: [
+      "Drawing levels too precisely instead of using zones",
+      "Ignoring the higher-timeframe trend",
+      "Assuming a breakout is reliable without volume or follow-through",
+    ],
+  },
 ];
 
 export function getIndicatorArticle(slug: string) {

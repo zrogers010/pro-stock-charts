@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { marketDataCacheHeaders, noStoreHeaders } from "@/lib/api-cache";
+import { isValidMarketSymbol, normalizeSymbol } from "@/lib/symbols";
 import yahooFinance from "@/lib/yahoo";
 
 export async function GET(
@@ -6,7 +8,14 @@ export async function GET(
   { params }: { params: { symbol: string } }
 ) {
   try {
-    const symbol = params.symbol.toUpperCase();
+    const symbol = normalizeSymbol(params.symbol);
+    if (!isValidMarketSymbol(symbol)) {
+      return NextResponse.json(
+        { news: [], error: "Invalid market symbol" },
+        { status: 400, headers: noStoreHeaders }
+      );
+    }
+
     const result = await yahooFinance.search(symbol, {
       quotesCount: 0,
       newsCount: 20,
@@ -27,9 +36,22 @@ export async function GET(
         article.thumbnail?.resolutions?.[0]?.url || null,
     }));
 
-    return NextResponse.json({ news });
+    return NextResponse.json(
+      {
+        news,
+        meta: {
+          symbol,
+          source: "Yahoo Finance",
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      { headers: marketDataCacheHeaders }
+    );
   } catch (error) {
     console.error("News error:", error);
-    return NextResponse.json({ news: [] });
+    return NextResponse.json(
+      { news: [], error: "News temporarily unavailable" },
+      { status: 502, headers: noStoreHeaders }
+    );
   }
 }

@@ -52,6 +52,21 @@ const checks = [
     pattern: "indicatorRoutes",
   },
   {
+    name: "indicators include moving averages",
+    file: "lib/indicators.ts",
+    pattern: "moving-averages",
+  },
+  {
+    name: "indicators include volume indicators",
+    file: "lib/indicators.ts",
+    pattern: "volume-indicators",
+  },
+  {
+    name: "indicators include support and resistance",
+    file: "lib/indicators.ts",
+    pattern: "support-and-resistance",
+  },
+  {
     name: "sitemap includes premium",
     file: "app/sitemap.ts",
     pattern: "\"premium\"",

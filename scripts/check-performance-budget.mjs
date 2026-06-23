@@ -7,6 +7,8 @@ const manifestPath = path.join(rootDir, ".next", "app-build-manifest.json");
 
 const budgets = [
   { route: "/page", maxKb: 380 },
+  { route: "/indicators/page", maxKb: 380 },
+  { route: "/indicators/[slug]/page", maxKb: 380 },
   { route: "/stock/[symbol]/page", maxKb: 450 },
   { route: "/tools/page", maxKb: 380 },
   { route: "/tools/position-size-calculator/page", maxKb: 390 },

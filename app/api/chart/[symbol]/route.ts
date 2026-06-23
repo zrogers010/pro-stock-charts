@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import yahooFinance from "@/lib/yahoo";
+import { marketDataCacheHeaders, noStoreHeaders } from "@/lib/api-cache";
+import { isValidMarketSymbol, normalizeSymbol } from "@/lib/symbols";
 
 interface RangeConfig {
   periodLabel: string;
@@ -77,8 +79,15 @@ export async function GET(
   { params }: { params: { symbol: string } }
 ) {
   const range = request.nextUrl.searchParams.get("range") || "1y";
-  const symbol = params.symbol.toUpperCase();
+  const symbol = normalizeSymbol(params.symbol);
   const config = rangeMap[range] || rangeMap["1y"];
+
+  if (!isValidMarketSymbol(symbol)) {
+    return NextResponse.json(
+      { data: [], error: "Invalid market symbol" },
+      { status: 400, headers: noStoreHeaders }
+    );
+  }
 
   try {
     const result = await yahooFinance.chart(symbol, {
@@ -111,9 +120,24 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({ data });
+    return NextResponse.json(
+      {
+        data,
+        meta: {
+          symbol,
+          range: config.periodLabel,
+          interval: config.interval,
+          source: "Yahoo Finance",
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      { headers: marketDataCacheHeaders }
+    );
   } catch (error) {
     console.error("Chart error:", error);
-    return NextResponse.json({ data: [] }, { status: 500 });
+    return NextResponse.json(
+      { data: [], error: "Chart data temporarily unavailable" },
+      { status: 502, headers: noStoreHeaders }
+    );
   }
 }

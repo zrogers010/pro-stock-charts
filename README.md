@@ -122,7 +122,7 @@ The app is now live at [http://localhost:3000](http://localhost:3000).
 Example:
 
 ```bash
-docker run -p 8080:8080 -e PORT=8080 prostockcharts
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-VZX4R5JT2S ./scripts/deploy-docker.sh
 ```
 
 ---

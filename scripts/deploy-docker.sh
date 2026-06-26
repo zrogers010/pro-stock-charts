@@ -25,6 +25,40 @@ require_command() {
 require_command docker
 require_command git
 
+if [ -n "$ENV_FILE" ] && [ ! -f "$ENV_FILE" ]; then
+  printf 'ENV_FILE does not exist: %s\n' "$ENV_FILE" >&2
+  exit 1
+fi
+
+env_file_value() {
+  local key="$1"
+
+  if [ -z "$ENV_FILE" ]; then
+    return 0
+  fi
+
+  awk -F= -v key="$key" '
+    $0 !~ /^[[:space:]]*#/ && $1 == key {
+      value = substr($0, length(key) + 2)
+      gsub(/^["'\'']|["'\'']$/, "", value)
+      print value
+      exit
+    }
+  ' "$ENV_FILE"
+}
+
+public_env_value() {
+  local key="$1"
+  local value="${!key:-}"
+
+  if [ -n "$value" ]; then
+    printf '%s' "$value"
+    return 0
+  fi
+
+  env_file_value "$key"
+}
+
 if [ "$PULL_LATEST" != "0" ]; then
   if [ -n "$(git status --porcelain)" ]; then
     printf 'Working tree is not clean. Commit, stash, or set PULL_LATEST=0.\n' >&2
@@ -43,6 +77,12 @@ build_args=(build -t "$IMAGE_NAME")
 if [ "$NO_CACHE" = "1" ]; then
   build_args+=(--no-cache)
 fi
+for public_key in NEXT_PUBLIC_GA_MEASUREMENT_ID NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION; do
+  public_value="$(public_env_value "$public_key")"
+  if [ -n "$public_value" ]; then
+    build_args+=(--build-arg "${public_key}=${public_value}")
+  fi
+done
 build_args+=(.)
 
 log "Building Docker image ${IMAGE_NAME}"
@@ -64,10 +104,6 @@ run_args=(
 )
 
 if [ -n "$ENV_FILE" ]; then
-  if [ ! -f "$ENV_FILE" ]; then
-    printf 'ENV_FILE does not exist: %s\n' "$ENV_FILE" >&2
-    exit 1
-  fi
   run_args+=(--env-file "$ENV_FILE")
 fi
 

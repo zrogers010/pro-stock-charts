@@ -8,7 +8,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Technical Indicators Explained",
   description:
-    "Educational guides to RSI, MACD, Bollinger Bands, and other technical indicators for stock chart research.",
+    "Educational guides to RSI, MACD, Bollinger Bands, moving averages, volume indicators, support and resistance, and other technical indicators for stock chart research.",
   alternates: {
     canonical: canonicalPath("/indicators"),
   },
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Technical Indicators Explained",
     description:
-      "Educational guides to RSI, MACD, Bollinger Bands, and other technical indicators.",
+      "Educational guides to RSI, MACD, Bollinger Bands, moving averages, volume indicators, and support and resistance.",
   },
 };
 

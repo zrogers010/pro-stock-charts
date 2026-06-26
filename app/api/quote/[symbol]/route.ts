@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { marketDataCacheHeaders, noStoreHeaders } from "@/lib/api-cache";
+import { isValidMarketSymbol, normalizeSymbol } from "@/lib/symbols";
 import { fetchStockSnapshot } from "@/lib/stock-data";
 
 export async function GET(
@@ -6,21 +8,28 @@ export async function GET(
   { params }: { params: { symbol: string } }
 ) {
   try {
-    const symbol = params.symbol.toUpperCase();
+    const symbol = normalizeSymbol(params.symbol);
+    if (!isValidMarketSymbol(symbol)) {
+      return NextResponse.json(
+        { error: "Invalid market symbol" },
+        { status: 400, headers: noStoreHeaders }
+      );
+    }
+
     const snapshot = await fetchStockSnapshot(symbol);
     if (!snapshot) {
       return NextResponse.json(
         { error: "Failed to fetch quote data" },
-        { status: 500 }
+        { status: 502, headers: noStoreHeaders }
       );
     }
 
-    return NextResponse.json(snapshot);
+    return NextResponse.json(snapshot, { headers: marketDataCacheHeaders });
   } catch (error) {
     console.error("Quote error:", error);
     return NextResponse.json(
       { error: "Failed to fetch quote data" },
-      { status: 500 }
+      { status: 502, headers: noStoreHeaders }
     );
   }
 }

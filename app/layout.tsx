@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { siteUrl } from "@/lib/markets";
 import "./globals.css";
+
+const googleAnalyticsId = "G-VZX4R5JT2S";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -55,18 +56,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-VZX4R5JT2S"
-          strategy="afterInteractive"
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
         />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-VZX4R5JT2S');
-          `}
-        </Script>
+            gtag('config', '${googleAnalyticsId}');
+          `,
+          }}
+        />
       </head>
       <body className="min-h-screen">{children}</body>
     </html>

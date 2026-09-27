@@ -84,6 +84,41 @@ export default function HomePage() {
           <div className="w-full max-w-xl">
             <SearchBox autoFocus large />
           </div>
+
+          {/* Intent Chips */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
+            <span className="text-xs text-zinc-500 mr-1">Quick access:</span>
+            <Link
+              href="/stock/AAPL"
+              className="inline-flex items-center rounded-lg bg-zinc-800/60 border border-zinc-700/50 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700/60 hover:border-zinc-600/60 transition-all"
+            >
+              AAPL
+            </Link>
+            <Link
+              href="/stock/NVDA"
+              className="inline-flex items-center rounded-lg bg-zinc-800/60 border border-zinc-700/50 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700/60 hover:border-zinc-600/60 transition-all"
+            >
+              NVDA
+            </Link>
+            <Link
+              href="/stock/BTC-USD"
+              className="inline-flex items-center rounded-lg bg-zinc-800/60 border border-zinc-700/50 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700/60 hover:border-zinc-600/60 transition-all"
+            >
+              BTC-USD
+            </Link>
+            <Link
+              href="/market-movers"
+              className="inline-flex items-center rounded-lg bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 text-sm font-medium text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all"
+            >
+              Market movers
+            </Link>
+            <Link
+              href="/compare"
+              className="inline-flex items-center rounded-lg bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 text-sm font-medium text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all"
+            >
+              Compare
+            </Link>
+          </div>
         </div>
 
         {/* Popular Assets */}
@@ -156,28 +191,6 @@ export default function HomePage() {
         </div>
 
         <SavedMarkets />
-
-        <section className="max-w-4xl mx-auto px-4 pb-24">
-          <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-3xl p-6 sm:p-8">
-            <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">
-              Coming Later
-            </div>
-            <h2 className="text-2xl font-semibold text-white tracking-tight mb-3">
-              Premium workflow sync, only if it is useful
-            </h2>
-            <p className="text-zinc-400 leading-relaxed mb-5">
-              Core charts stay free. If you want synced watchlists, saved chart
-              layouts, alerts, or multi-chart dashboards later, you can mark
-              which workflows matter without creating an account.
-            </p>
-            <Link
-              href="/premium"
-              className="inline-flex items-center justify-center rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-zinc-100 transition-colors hover:bg-zinc-700"
-            >
-              Explore premium ideas
-            </Link>
-          </div>
-        </section>
 
         <section className="max-w-4xl mx-auto px-4 pb-24">
           <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-3xl p-6 sm:p-8">
@@ -329,6 +342,29 @@ export default function HomePage() {
                 </p>
               </Link>
             ))}
+          </div>
+        </section>
+
+        {/* Premium Section - Demoted below the fold */}
+        <section className="max-w-4xl mx-auto px-4 pb-24">
+          <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-3xl p-6 sm:p-8">
+            <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3">
+              Coming Later
+            </div>
+            <h2 className="text-2xl font-semibold text-white tracking-tight mb-3">
+              Premium workflow sync, only if it is useful
+            </h2>
+            <p className="text-zinc-400 leading-relaxed mb-5">
+              Core charts stay free. If you want synced watchlists, saved chart
+              layouts, alerts, or multi-chart dashboards later, you can mark
+              which workflows matter without creating an account.
+            </p>
+            <Link
+              href="/premium"
+              className="inline-flex items-center justify-center rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-zinc-100 transition-colors hover:bg-zinc-700"
+            >
+              Explore premium ideas
+            </Link>
           </div>
         </section>
       </main>

@@ -117,13 +117,16 @@ The app is now live at [http://localhost:3000](http://localhost:3000).
 | -------------------------------- | --------- | ------------------------------------------------ |
 | `PORT`                           | `3000`    | Port the server binds to                         |
 | `HOSTNAME`                       | `0.0.0.0` | Host the server binds to                         |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID`  | unset     | Optional Google Analytics measurement ID         |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID`  | unset     | Optional Google Analytics measurement ID (create a separate GA4 property for PSC - do not reuse IDs from other sites) |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | unset | Optional Google Search Console verification code |
 
 Example:
 
 ```bash
-NEXT_PUBLIC_GA_MEASUREMENT_ID=G-VZX4R5JT2S ./scripts/deploy-docker.sh
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX ./scripts/deploy-docker.sh
 ```
+
+For detailed deployment instructions including GA4 setup, domain redirects, and HSTS configuration, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ---
 

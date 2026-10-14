@@ -7,7 +7,7 @@ import { getAssetClassLabel } from "@/lib/asset-labels";
 import { canonicalPath } from "@/lib/seo";
 import { fetchStockSnapshot, getDisplayName } from "@/lib/stock-data";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,

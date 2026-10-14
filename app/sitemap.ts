@@ -3,13 +3,16 @@ import {
   featuredHubSlugs,
   marketHubs,
   siteUrl,
-  stockPageSymbols,
 } from "@/lib/markets";
 import { educationArticles } from "@/lib/education";
 import { indicatorArticles } from "@/lib/indicators";
 import { comparisons } from "@/lib/comparisons";
 import { assetToSlug } from "@/lib/market-pages";
 import { seoReviewedAt } from "@/lib/seo";
+import { popularTickers } from "@/lib/popular-tickers";
+
+// Force static generation at build time
+export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
@@ -32,7 +35,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: path === "" ? 1 : 0.8,
     }));
 
-  const stockRoutes = stockPageSymbols.map((symbol) => ({
+  const stockRoutes = Array.from(new Set(popularTickers)).map((symbol) => ({
     url: `${siteUrl}/stock/${encodeURIComponent(symbol)}`,
     changeFrequency: "hourly" as const,
     priority: 0.9,

@@ -317,12 +317,18 @@ export default function HomePage() {
 
         <section className="max-w-4xl mx-auto px-4 pb-24">
           <div className="mb-4 flex items-end justify-between gap-4">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
-              Technical Indicators
-            </h2>
+            <div>
+              <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">
+                Technical Indicators
+              </h2>
+              <p className="text-sm text-zinc-400">
+                SMA, EMA, Bollinger Bands, RSI, and MACD are now available on every chart.
+                Toggle them in the chart settings.
+              </p>
+            </div>
             <Link
               href="/indicators"
-              className="text-sm font-medium text-blue-400 hover:text-blue-300"
+              className="text-sm font-medium text-blue-400 hover:text-blue-300 whitespace-nowrap"
             >
               View all
             </Link>

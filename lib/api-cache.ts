@@ -1,5 +1,5 @@
 export const marketDataCacheHeaders = {
-  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60",
 };
 
 export const searchCacheHeaders = {

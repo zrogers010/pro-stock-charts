@@ -15,6 +15,7 @@ import {
 } from "@/lib/format";
 import { getAssetClassLabel } from "@/lib/asset-labels";
 import { getRelatedAssets } from "@/lib/markets";
+import { getQuoteDisplayState } from "@/lib/quote-display";
 import type { QuoteData, SummaryData } from "@/lib/stock-data";
 
 const StockChart = dynamic(() => import("@/components/StockChart"), {
@@ -160,6 +161,7 @@ export default function StockView({
   const relatedAssets = getRelatedAssets(symbol);
   const isWatchlisted = watchlist.includes(symbol);
   const disclosure = getQuoteDisclosure(quote);
+  const quoteState = getQuoteDisplayState(quote);
   const researchCards = getResearchCards(assetClass, displayName, symbol);
   const dataDefinitions = getDataDefinitions({
     assetClass,
@@ -200,16 +202,23 @@ export default function StockView({
           </div>
           <div className="flex items-baseline gap-3 flex-wrap">
             <span className="text-4xl font-bold text-white tracking-tight">
-              {formatCurrency(quote.regularMarketPrice)}
+              {formatCurrency(quoteState.price)}
             </span>
-            <span
-              className={`text-base font-semibold ${changeColor} ${changeBg} px-2.5 py-1 rounded-lg`}
-            >
-              {isPositive ? "+" : ""}
-              {quote.regularMarketChange?.toFixed(2)} (
-              {isPositive ? "+" : ""}
-              {quote.regularMarketChangePercent?.toFixed(2)}%)
-            </span>
+            {quoteState.price != null && quoteState.change != null && (
+              <span
+                className={`text-base font-semibold ${changeColor} ${changeBg} px-2.5 py-1 rounded-lg`}
+              >
+                {(quoteState.change >= 0) ? "+" : ""}
+                {quoteState.change.toFixed(2)} (
+                {(quoteState.change >= 0) ? "+" : ""}
+                {quoteState.changePercent?.toFixed(2)}%)
+              </span>
+            )}
+            {quoteState.label !== "Regular" && quoteState.label !== "—" && (
+              <span className="text-sm font-medium text-zinc-400 bg-zinc-800/50 px-2.5 py-1 rounded-lg">
+                {quoteState.label}
+              </span>
+            )}
             <button
               onClick={toggleWatchlist}
               className={`text-xs font-semibold rounded-lg px-3 py-1.5 transition-colors ${
@@ -228,7 +237,7 @@ export default function StockView({
           </p>
           <div className="mt-4 grid gap-2 text-xs text-zinc-500 sm:grid-cols-3">
             <DisclosureItem label="Source" value={disclosure.source} />
-            <DisclosureItem label="Quote Time" value={disclosure.time} />
+            <DisclosureItem label="Quote Time" value={quoteState.timestamp} />
             <DisclosureItem label="Delay" value={disclosure.delay} />
           </div>
           <p className="mt-3 text-xs leading-relaxed text-zinc-600 max-w-4xl">

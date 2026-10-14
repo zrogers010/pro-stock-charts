@@ -27,6 +27,15 @@ export interface QuoteData {
   circulatingSupply?: number;
   volume24Hr?: number;
   volumeAllCurrencies?: number;
+  // Pre/post market fields
+  preMarketPrice?: number;
+  preMarketChange?: number;
+  preMarketChangePercent?: number;
+  preMarketTime?: Date | string | number;
+  postMarketPrice?: number;
+  postMarketChange?: number;
+  postMarketChangePercent?: number;
+  postMarketTime?: Date | string | number;
 }
 
 export interface SummaryData {

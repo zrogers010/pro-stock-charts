@@ -1,9 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { createChart, ColorType, IChartApi } from "lightweight-charts";
+import {
+  createChart,
+  ColorType,
+  IChartApi,
+  LineStyle,
+} from "lightweight-charts";
 import { trackEvent } from "@/lib/analytics";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import {
+  calculateSMA,
+  calculateEMA,
+  calculateBollingerBands,
+  calculateRSI,
+  calculateMACD,
+  type OHLCData,
+} from "@/lib/technical-indicators";
 
 interface ChartDataPoint {
   time: string | number;
@@ -25,13 +38,33 @@ const timeRanges = [
 ];
 
 type ChartType = "area" | "candle";
+type IndicatorSettings = {
+  sma20: boolean;
+  sma50: boolean;
+  sma200: boolean;
+  ema: boolean;
+  bb: boolean;
+  rsi: boolean;
+  macd: boolean;
+};
 type SavedChartLayout = {
   range: string;
   type: ChartType;
+  indicators: IndicatorSettings;
   savedAt: string;
 };
 
 const validRangeValues = new Set(timeRanges.map((range) => range.value));
+
+const defaultIndicators: IndicatorSettings = {
+  sma20: false,
+  sma50: false,
+  sma200: false,
+  ema: false,
+  bb: false,
+  rsi: false,
+  macd: false,
+};
 
 function chartLayoutKey(symbol: string) {
   return `psc_chart_layout_${symbol.toUpperCase()}`;
@@ -44,17 +77,44 @@ function readSavedLayout(symbol: string): SavedChartLayout | null {
     const parsed = JSON.parse(stored) as SavedChartLayout;
     if (!validRangeValues.has(parsed.range)) return null;
     if (parsed.type !== "area" && parsed.type !== "candle") return null;
+    if (!parsed.indicators) {
+      parsed.indicators = { ...defaultIndicators };
+    }
     return parsed;
   } catch {
     return null;
   }
 }
 
+function serializeIndicators(ind: IndicatorSettings): string {
+  const active = Object.entries(ind)
+    .filter(([_, enabled]) => enabled)
+    .map(([key]) => key);
+  return active.join(",");
+}
+
+function deserializeIndicators(value: string): IndicatorSettings {
+  const active = value.split(",").filter(Boolean);
+  const result = { ...defaultIndicators };
+  for (const key of active) {
+    if (key in result) {
+      (result as any)[key] = true;
+    }
+  }
+  return result;
+}
+
 export default function StockChart({ symbol }: { symbol: string }) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const rsiContainerRef = useRef<HTMLDivElement>(null);
+  const macdContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const rsiChartRef = useRef<IChartApi | null>(null);
+  const macdChartRef = useRef<IChartApi | null>(null);
   const [activeRange, setActiveRange] = useState("1y");
   const [chartType, setChartType] = useState<ChartType>("area");
+  const [indicators, setIndicators] = useState<IndicatorSettings>(defaultIndicators);
+  const [showIndicatorMenu, setShowIndicatorMenu] = useState(false);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +123,7 @@ export default function StockChart({ symbol }: { symbol: string }) {
   const [savedLayout, setSavedLayout] = useState<SavedChartLayout | null>(null);
   const [layoutNotice, setLayoutNotice] = useState<string | null>(null);
 
+  // Hydrate from URL and localStorage
   useEffect(() => {
     setHasHydratedUrlState(false);
     setLayoutNotice(null);
@@ -70,11 +131,13 @@ export default function StockChart({ symbol }: { symbol: string }) {
     const params = new URLSearchParams(window.location.search);
     const range = params.get("range");
     const type = params.get("type");
+    const indicatorsParam = params.get("indicators");
     const saved = readSavedLayout(symbol);
     const hasUrlLayout =
       Boolean(range && validRangeValues.has(range)) ||
       type === "area" ||
-      type === "candle";
+      type === "candle" ||
+      Boolean(indicatorsParam);
 
     if (range && validRangeValues.has(range)) {
       setActiveRange(range);
@@ -92,18 +155,33 @@ export default function StockChart({ symbol }: { symbol: string }) {
       setChartType("area");
     }
 
+    if (indicatorsParam) {
+      setIndicators(deserializeIndicators(indicatorsParam));
+    } else if (!hasUrlLayout && saved) {
+      setIndicators(saved.indicators);
+    } else {
+      setIndicators(defaultIndicators);
+    }
+
     setSavedLayout(saved);
     setHasHydratedUrlState(true);
   }, [symbol]);
 
+  // Sync to URL
   useEffect(() => {
     if (!hasHydratedUrlState) return;
     const params = new URLSearchParams(window.location.search);
     params.set("range", activeRange);
     params.set("type", chartType);
+    const indicatorStr = serializeIndicators(indicators);
+    if (indicatorStr) {
+      params.set("indicators", indicatorStr);
+    } else {
+      params.delete("indicators");
+    }
     const nextUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", nextUrl);
-  }, [activeRange, chartType, hasHydratedUrlState]);
+  }, [activeRange, chartType, indicators, hasHydratedUrlState]);
 
   // Fetch data
   useEffect(() => {
@@ -131,7 +209,7 @@ export default function StockChart({ symbol }: { symbol: string }) {
     };
   }, [symbol, activeRange, retryCount]);
 
-  // Render chart
+  // Render chart with indicators
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -140,19 +218,39 @@ export default function StockChart({ symbol }: { symbol: string }) {
         chartRef.current.remove();
         chartRef.current = null;
       }
+      if (rsiChartRef.current) {
+        rsiChartRef.current.remove();
+        rsiChartRef.current = null;
+      }
+      if (macdChartRef.current) {
+        macdChartRef.current.remove();
+        macdChartRef.current = null;
+      }
       return;
     }
 
-    // Remove existing chart
+    // Remove existing charts
     if (chartRef.current) {
       chartRef.current.remove();
       chartRef.current = null;
     }
+    if (rsiChartRef.current) {
+      rsiChartRef.current.remove();
+      rsiChartRef.current = null;
+    }
+    if (macdChartRef.current) {
+      macdChartRef.current.remove();
+      macdChartRef.current = null;
+    }
 
     const container = chartContainerRef.current;
+    const showRSI = indicators.rsi;
+    const showMACD = indicators.macd;
+    const mainHeight = showRSI || showMACD ? 380 : 480;
+
     const chart = createChart(container, {
       width: container.clientWidth,
-      height: 480,
+      height: mainHeight,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: "#52525b",
@@ -189,10 +287,10 @@ export default function StockChart({ symbol }: { symbol: string }) {
         fixRightEdge: true,
       },
       handleScroll: {
-        mouseWheel: false,
+        mouseWheel: true,
         pressedMouseMove: true,
-        horzTouchDrag: false,
-        vertTouchDrag: false,
+        horzTouchDrag: true,
+        vertTouchDrag: true,
       },
       handleScale: {
         mouseWheel: true,
@@ -203,7 +301,6 @@ export default function StockChart({ symbol }: { symbol: string }) {
 
     chartRef.current = chart;
 
-    // Determine direction for color
     const isPositive =
       chartData.length > 1 &&
       chartData[chartData.length - 1].close >= chartData[0].open;
@@ -246,6 +343,90 @@ export default function StockChart({ symbol }: { symbol: string }) {
       );
     }
 
+    // Add indicators
+    const ohlcData: OHLCData[] = chartData.map((d) => ({
+      time: d.time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+      volume: d.volume,
+    }));
+
+    if (indicators.sma20) {
+      const sma20Data = calculateSMA(ohlcData, 20);
+      const sma20Series = chart.addLineSeries({
+        color: "#3b82f6",
+        lineWidth: 2,
+        title: "SMA 20",
+        priceLineVisible: false,
+      });
+      sma20Series.setData(sma20Data.map((d) => ({ time: d.time as any, value: d.value })));
+    }
+
+    if (indicators.sma50) {
+      const sma50Data = calculateSMA(ohlcData, 50);
+      const sma50Series = chart.addLineSeries({
+        color: "#f59e0b",
+        lineWidth: 2,
+        title: "SMA 50",
+        priceLineVisible: false,
+      });
+      sma50Series.setData(sma50Data.map((d) => ({ time: d.time as any, value: d.value })));
+    }
+
+    if (indicators.sma200) {
+      const sma200Data = calculateSMA(ohlcData, 200);
+      const sma200Series = chart.addLineSeries({
+        color: "#ef4444",
+        lineWidth: 2,
+        title: "SMA 200",
+        priceLineVisible: false,
+      });
+      sma200Series.setData(sma200Data.map((d) => ({ time: d.time as any, value: d.value })));
+    }
+
+    if (indicators.ema) {
+      const ema20Data = calculateEMA(ohlcData, 20);
+      const ema20Series = chart.addLineSeries({
+        color: "#8b5cf6",
+        lineWidth: 2,
+        lineStyle: LineStyle.Dashed,
+        title: "EMA 20",
+        priceLineVisible: false,
+      });
+      ema20Series.setData(ema20Data.map((d) => ({ time: d.time as any, value: d.value })));
+    }
+
+    if (indicators.bb) {
+      const bbData = calculateBollingerBands(ohlcData, 20, 2);
+      const bbUpper = chart.addLineSeries({
+        color: "#6366f1",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dotted,
+        title: "BB Upper",
+        priceLineVisible: false,
+      });
+      bbUpper.setData(bbData.map((d) => ({ time: d.time as any, value: d.upper })));
+
+      const bbMiddle = chart.addLineSeries({
+        color: "#6366f1",
+        lineWidth: 1,
+        title: "BB Middle",
+        priceLineVisible: false,
+      });
+      bbMiddle.setData(bbData.map((d) => ({ time: d.time as any, value: d.middle })));
+
+      const bbLower = chart.addLineSeries({
+        color: "#6366f1",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dotted,
+        title: "BB Lower",
+        priceLineVisible: false,
+      });
+      bbLower.setData(bbData.map((d) => ({ time: d.time as any, value: d.lower })));
+    }
+
     // Volume bars
     const volumeSeries = chart.addHistogramSeries({
       priceFormat: { type: "volume" },
@@ -264,15 +445,150 @@ export default function StockChart({ symbol }: { symbol: string }) {
 
     chart.timeScale().fitContent();
 
+    // RSI Chart
+    if (showRSI && rsiContainerRef.current) {
+      const rsiChart = createChart(rsiContainerRef.current, {
+        width: rsiContainerRef.current.clientWidth,
+        height: 120,
+        layout: {
+          background: { type: ColorType.Solid, color: "transparent" },
+          textColor: "#52525b",
+          fontSize: 11,
+          fontFamily: "Inter, system-ui, sans-serif",
+        },
+        grid: {
+          vertLines: { color: "#27272a25" },
+          horzLines: { color: "#27272a25" },
+        },
+        rightPriceScale: {
+          borderColor: "#27272a50",
+        },
+        timeScale: {
+          borderColor: "#27272a50",
+          visible: false,
+        },
+        handleScroll: false,
+        handleScale: false,
+      });
+      rsiChartRef.current = rsiChart;
+
+      const rsiData = calculateRSI(ohlcData, 14);
+      const rsiSeries = rsiChart.addLineSeries({
+        color: "#a855f7",
+        lineWidth: 2,
+        priceLineVisible: false,
+      });
+      rsiSeries.setData(rsiData.map((d) => ({ time: d.time as any, value: d.value })));
+
+      // Add 30 and 70 reference lines
+      const rsi70 = rsiChart.addLineSeries({
+        color: "#ef444440",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        priceLineVisible: false,
+      });
+      rsi70.setData(rsiData.map((d) => ({ time: d.time as any, value: 70 })));
+
+      const rsi30 = rsiChart.addLineSeries({
+        color: "#22c55e40",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        priceLineVisible: false,
+      });
+      rsi30.setData(rsiData.map((d) => ({ time: d.time as any, value: 30 })));
+
+      rsiChart.timeScale().fitContent();
+      
+      // Sync time scales
+      chart.timeScale().subscribeVisibleLogicalRangeChange((timeRange) => {
+        if (timeRange) {
+          rsiChart.timeScale().setVisibleLogicalRange(timeRange);
+        }
+      });
+    }
+
+    // MACD Chart
+    if (showMACD && macdContainerRef.current) {
+      const macdChart = createChart(macdContainerRef.current, {
+        width: macdContainerRef.current.clientWidth,
+        height: 120,
+        layout: {
+          background: { type: ColorType.Solid, color: "transparent" },
+          textColor: "#52525b",
+          fontSize: 11,
+          fontFamily: "Inter, system-ui, sans-serif",
+        },
+        grid: {
+          vertLines: { color: "#27272a25" },
+          horzLines: { color: "#27272a25" },
+        },
+        rightPriceScale: {
+          borderColor: "#27272a50",
+        },
+        timeScale: {
+          borderColor: "#27272a50",
+          visible: false,
+        },
+        handleScroll: false,
+        handleScale: false,
+      });
+      macdChartRef.current = macdChart;
+
+      const macdData = calculateMACD(ohlcData, 12, 26, 9);
+      
+      const macdLine = macdChart.addLineSeries({
+        color: "#3b82f6",
+        lineWidth: 2,
+        priceLineVisible: false,
+      });
+      macdLine.setData(macdData.map((d) => ({ time: d.time as any, value: d.macd })));
+
+      const signalLine = macdChart.addLineSeries({
+        color: "#f59e0b",
+        lineWidth: 2,
+        priceLineVisible: false,
+      });
+      signalLine.setData(macdData.map((d) => ({ time: d.time as any, value: d.signal })));
+
+      const histogram = macdChart.addHistogramSeries({
+        color: "#22c55e",
+        priceFormat: { type: "price", precision: 4, minMove: 0.0001 },
+      });
+      histogram.setData(
+        macdData.map((d) => ({
+          time: d.time as any,
+          value: d.histogram,
+          color: d.histogram >= 0 ? "#22c55e80" : "#ef444480",
+        }))
+      );
+
+      macdChart.timeScale().fitContent();
+      
+      // Sync time scales
+      chart.timeScale().subscribeVisibleLogicalRangeChange((timeRange) => {
+        if (timeRange) {
+          macdChart.timeScale().setVisibleLogicalRange(timeRange);
+        }
+      });
+    }
+
     // Double-click to reset zoom
     const handleDoubleClick = () => {
       chart.timeScale().fitContent();
+      if (rsiChartRef.current) rsiChartRef.current.timeScale().fitContent();
+      if (macdChartRef.current) macdChartRef.current.timeScale().fitContent();
     };
     container.addEventListener("dblclick", handleDoubleClick);
 
     // Resize
     const handleResize = () => {
       chart.applyOptions({ width: container.clientWidth });
+      if (rsiChartRef.current && rsiContainerRef.current) {
+        rsiChartRef.current.applyOptions({ width: rsiContainerRef.current.clientWidth });
+      }
+      if (macdChartRef.current && macdContainerRef.current) {
+        macdChartRef.current.applyOptions({ width: macdContainerRef.current.clientWidth });
+      }
     };
     window.addEventListener("resize", handleResize);
 
@@ -281,8 +597,16 @@ export default function StockChart({ symbol }: { symbol: string }) {
       window.removeEventListener("resize", handleResize);
       chart.remove();
       chartRef.current = null;
+      if (rsiChartRef.current) {
+        rsiChartRef.current.remove();
+        rsiChartRef.current = null;
+      }
+      if (macdChartRef.current) {
+        macdChartRef.current.remove();
+        macdChartRef.current = null;
+      }
     };
-  }, [chartData, chartType, activeRange]);
+  }, [chartData, chartType, activeRange, indicators]);
 
   const download = useCallback(
     (format: "csv" | "json") => {
@@ -336,12 +660,15 @@ export default function StockChart({ symbol }: { symbol: string }) {
 
   const latestPoint = chartData[chartData.length - 1];
   const activeLayoutIsSaved =
-    savedLayout?.range === activeRange && savedLayout.type === chartType;
+    savedLayout?.range === activeRange &&
+    savedLayout.type === chartType &&
+    JSON.stringify(savedLayout.indicators) === JSON.stringify(indicators);
 
   const saveLayout = () => {
     const nextLayout: SavedChartLayout = {
       range: activeRange,
       type: chartType,
+      indicators: { ...indicators },
       savedAt: new Date().toISOString(),
     };
     window.localStorage.setItem(chartLayoutKey(symbol), JSON.stringify(nextLayout));
@@ -351,6 +678,7 @@ export default function StockChart({ symbol }: { symbol: string }) {
       symbol,
       range: activeRange,
       chart_type: chartType,
+      indicators: serializeIndicators(indicators),
     });
   };
 
@@ -359,6 +687,18 @@ export default function StockChart({ symbol }: { symbol: string }) {
     setSavedLayout(null);
     setLayoutNotice("Saved layout cleared.");
     trackEvent("chart_layout_clear", { symbol });
+  };
+
+  const toggleIndicator = (key: keyof IndicatorSettings) => {
+    setIndicators((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+    trackEvent("chart_indicator_toggle", {
+      symbol,
+      indicator: key,
+      enabled: !indicators[key],
+    });
   };
 
   return (
@@ -420,6 +760,60 @@ export default function StockChart({ symbol }: { symbol: string }) {
               Candle
             </button>
           </div>
+          <div className="relative">
+            <button
+              onClick={() => setShowIndicatorMenu(!showIndicatorMenu)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                Object.values(indicators).some((v) => v)
+                  ? "bg-blue-500/15 text-blue-300"
+                  : "bg-zinc-800/60 text-zinc-400 hover:text-white"
+              }`}
+            >
+              Indicators
+            </button>
+            {showIndicatorMenu && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-10">
+                <div className="p-2 space-y-1">
+                  <IndicatorToggle
+                    label="SMA 20"
+                    checked={indicators.sma20}
+                    onChange={() => toggleIndicator("sma20")}
+                  />
+                  <IndicatorToggle
+                    label="SMA 50"
+                    checked={indicators.sma50}
+                    onChange={() => toggleIndicator("sma50")}
+                  />
+                  <IndicatorToggle
+                    label="SMA 200"
+                    checked={indicators.sma200}
+                    onChange={() => toggleIndicator("sma200")}
+                  />
+                  <IndicatorToggle
+                    label="EMA 20"
+                    checked={indicators.ema}
+                    onChange={() => toggleIndicator("ema")}
+                  />
+                  <IndicatorToggle
+                    label="Bollinger Bands"
+                    checked={indicators.bb}
+                    onChange={() => toggleIndicator("bb")}
+                  />
+                  <div className="border-t border-zinc-700 my-1"></div>
+                  <IndicatorToggle
+                    label="RSI (14)"
+                    checked={indicators.rsi}
+                    onChange={() => toggleIndicator("rsi")}
+                  />
+                  <IndicatorToggle
+                    label="MACD (12,26,9)"
+                    checked={indicators.macd}
+                    onChange={() => toggleIndicator("macd")}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={saveLayout}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
@@ -475,7 +869,23 @@ export default function StockChart({ symbol }: { symbol: string }) {
             </div>
           </div>
         )}
-        <div ref={chartContainerRef} className="w-full" style={{ height: 480 }} />
+        <div ref={chartContainerRef} className="w-full" style={{ height: indicators.rsi || indicators.macd ? 380 : 480 }} />
+        {indicators.rsi && (
+          <div className="border-t border-zinc-800/30">
+            <div className="px-4 py-1 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+              RSI (14)
+            </div>
+            <div ref={rsiContainerRef} className="w-full" style={{ height: 120 }} />
+          </div>
+        )}
+        {indicators.macd && (
+          <div className="border-t border-zinc-800/30">
+            <div className="px-4 py-1 text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+              MACD (12, 26, 9)
+            </div>
+            <div ref={macdContainerRef} className="w-full" style={{ height: 120 }} />
+          </div>
+        )}
       </div>
       {chartData.length > 0 && (
         <>
@@ -516,5 +926,27 @@ function ChartStat({ label, value }: { label: string; value: string }) {
       </div>
       <div className="mt-1 font-medium tabular-nums text-zinc-300">{value}</div>
     </div>
+  );
+}
+
+function IndicatorToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-zinc-700/50 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="w-4 h-4 rounded border-zinc-600 bg-zinc-700 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+      />
+      <span className="text-sm text-zinc-300">{label}</span>
+    </label>
   );
 }

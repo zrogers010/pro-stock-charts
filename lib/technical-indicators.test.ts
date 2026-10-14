@@ -257,3 +257,31 @@ describe("Technical Indicators", () => {
     });
   });
 });
+
+describe("RSI reference values", () => {
+  it("returns 100 when there are no losses in a pure uptrend", () => {
+    const up: OHLCData[] = Array.from({ length: 30 }, (_, i) => ({
+      time: i, open: 100 + i, high: 100 + i, low: 100 + i, close: 100 + i * 0.5, volume: 1,
+    }));
+    expect(calculateRSI(up, 14).at(-1)!.value).toBe(100);
+  });
+
+  it("returns 50 for a flat series", () => {
+    const flat: OHLCData[] = Array.from({ length: 20 }, (_, i) => ({
+      time: i, open: 100, high: 100, low: 100, close: 100, volume: 1,
+    }));
+    expect(calculateRSI(flat, 14).every((p) => p.value === 50)).toBe(true);
+  });
+
+  it("matches Wilder RSI computed by hand for realisticData", () => {
+    const closes = realisticData.map((d) => d.close);
+    const diffs = closes.slice(1).map((c, i) => c - closes[i]);
+    let g = diffs.slice(0, 14).reduce((a, d) => a + Math.max(d, 0), 0) / 14;
+    let l = diffs.slice(0, 14).reduce((a, d) => a + Math.max(-d, 0), 0) / 14;
+    for (let i = 14; i < diffs.length; i++) {
+      g = (g * 13 + Math.max(diffs[i], 0)) / 14;
+      l = (l * 13 + Math.max(-diffs[i], 0)) / 14;
+    }
+    expect(calculateRSI(realisticData, 14).at(-1)!.value).toBeCloseTo(100 - 100 / (1 + g / l), 10);
+  });
+});

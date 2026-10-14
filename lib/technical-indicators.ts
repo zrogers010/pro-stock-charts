@@ -162,23 +162,23 @@ export function calculateRSI(data: OHLCData[], period: number = 14): RSIResult[]
   avgGain /= period;
   avgLoss /= period;
 
-  // Calculate RSI for the first period
-  let rs = avgGain / (avgLoss || 1);
-  let rsi = 100 - 100 / (1 + rs);
+  const toRSI = (gain: number, loss: number) => {
+    if (loss === 0) return gain === 0 ? 50 : 100;
+    return 100 - 100 / (1 + gain / loss);
+  };
+
   result.push({
     time: data[period].time,
-    value: rsi,
+    value: toRSI(avgGain, avgLoss),
   });
 
   // Calculate RSI for remaining values using smoothed averages
   for (let i = period; i < gains.length; i++) {
     avgGain = (avgGain * (period - 1) + gains[i]) / period;
     avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
-    rs = avgGain / (avgLoss || 1);
-    rsi = 100 - 100 / (1 + rs);
     result.push({
       time: data[i + 1].time,
-      value: rsi,
+      value: toRSI(avgGain, avgLoss),
     });
   }
 

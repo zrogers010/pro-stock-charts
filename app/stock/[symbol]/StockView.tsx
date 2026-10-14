@@ -144,7 +144,7 @@ export default function StockView({
     );
   }
 
-  const isPositive = (quote.regularMarketChange || 0) >= 0;
+  const isPositive = (getQuoteDisplayState(quote).change ?? 0) >= 0;
   const changeColor = isPositive ? "text-emerald-400" : "text-red-400";
   const changeBg = isPositive ? "bg-emerald-400/10" : "bg-red-400/10";
   const profile = summary?.assetProfile;

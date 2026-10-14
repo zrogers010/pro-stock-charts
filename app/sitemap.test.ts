@@ -101,3 +101,10 @@ describe("Sitemap", () => {
     expect(() => sitemap()).not.toThrow();
   });
 });
+
+describe("Sitemap uniqueness", () => {
+  it("has no duplicate URLs", () => {
+    const urls = sitemap().map((e) => e.url);
+    expect(new Set(urls).size).toBe(urls.length);
+  });
+});

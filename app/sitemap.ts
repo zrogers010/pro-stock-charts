@@ -35,7 +35,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: path === "" ? 1 : 0.8,
     }));
 
-  const stockRoutes = popularTickers.map((symbol) => ({
+  const stockRoutes = Array.from(new Set(popularTickers)).map((symbol) => ({
     url: `${siteUrl}/stock/${encodeURIComponent(symbol)}`,
     changeFrequency: "hourly" as const,
     priority: 0.9,

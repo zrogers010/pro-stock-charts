@@ -21,6 +21,7 @@ import {
 import {
   RANGES,
   INTERVALS,
+  isValidIntervalForRange,
   getDefaultIntervalForRange,
   getValidIntervalsForRange,
   normalizeToPercentChange,
@@ -142,6 +143,10 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
   const [chartHeight, setChartHeight] = useState(480);
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
+  const [draftStartDate, setDraftStartDate] = useState("");
+  const [draftEndDate, setDraftEndDate] = useState("");
+  const chartHeightRef = useRef(chartHeight);
+  chartHeightRef.current = chartHeight;
 
   // Hydrate from URL and localStorage
   useEffect(() => {
@@ -167,7 +172,11 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
     const validRanges = RANGES.map((r) => r.value);
     if (range && validRanges.includes(range)) {
       setActiveRange(range);
-      setActiveInterval(interval || getDefaultIntervalForRange(range));
+      setActiveInterval(
+        interval && isValidIntervalForRange(interval, range)
+          ? interval
+          : getDefaultIntervalForRange(range)
+      );
     } else if (!hasUrlLayout && saved) {
       setActiveRange(saved.range);
       setActiveInterval(saved.interval || getDefaultIntervalForRange(saved.range));
@@ -195,7 +204,11 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
     }
 
     if (compare) {
-      const tickers = compare.split(",").filter(Boolean).slice(0, 3);
+      const tickers = compare
+        .split(",")
+        .map((t) => t.trim().toUpperCase())
+        .filter((t) => /^[A-Z0-9.\-=^]{1,15}$/.test(t))
+        .slice(0, 3);
       setCompareTickers(tickers);
     } else if (!hasUrlLayout && saved) {
       setCompareTickers(saved.compareTickers || []);
@@ -386,9 +399,7 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
     const priceScaleMode =
       priceScale === "logarithmic"
         ? PriceScaleMode.Logarithmic
-        : priceScale === "percentage"
-        ? PriceScaleMode.Percentage
-        : PriceScaleMode.Normal;
+        : PriceScaleMode.Normal; // percentage data is normalized manually below
 
     const chart = createChart(container, {
       width: container.clientWidth,
@@ -451,11 +462,21 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
 
     // If percentage mode and comparing, normalize all data
     if (priceScale === "percentage") {
-      const baseValue = chartData[0]?.close || 100;
-      const normalizedMain = normalizeToPercentChange(
-        chartData.map((d) => ({ time: d.time, value: d.close })),
-        baseValue
+      // Normalize every series from a common start time so lines are comparable.
+      const toSec = (t: string | number) =>
+        typeof t === "number" ? t : Date.parse(t) / 1000;
+      const seriesList = [chartData, ...compareTickers.map((t) => compareData[t] || [])].filter(
+        (d) => d.length > 0
       );
+      const commonStart = Math.max(...seriesList.map((d) => toSec(d[0].time)));
+      const alignAndNormalize = (data: ChartDataPoint[]) => {
+        const visible = data.filter((d) => toSec(d.time) >= commonStart);
+        return normalizeToPercentChange(
+          visible.map((d) => ({ time: d.time, value: d.close })),
+          visible[0]?.close ?? 0
+        );
+      };
+      const normalizedMain = alignAndNormalize(chartData);
 
       const mainSeries = chart.addLineSeries({
         color: "#3b82f6",
@@ -470,11 +491,7 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
       compareTickers.forEach((ticker, idx) => {
         const data = compareData[ticker];
         if (data && data.length > 0) {
-          const tickerBaseValue = data[0]?.close || 100;
-          const normalized = normalizeToPercentChange(
-            data.map((d) => ({ time: d.time, value: d.close })),
-            tickerBaseValue
-          );
+          const normalized = alignAndNormalize(data);
 
           const series = chart.addLineSeries({
             color: colors[idx % colors.length],
@@ -818,8 +835,9 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
     let startHeight: number;
 
     const handleMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
       startY = e.clientY;
-      startHeight = chartHeight;
+      startHeight = chartHeightRef.current;
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     };
@@ -838,8 +856,20 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
     resizer.addEventListener("mousedown", handleMouseDown);
     return () => {
       resizer.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [chartHeight]);
+  }, [isLoading, chartData.length]);
+
+  // Keep fullscreen state in sync (Esc key, browser UI) and resize the chart.
+  useEffect(() => {
+    const onChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+      window.dispatchEvent(new Event("resize"));
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
 
   const download = useCallback(
     (format: "csv" | "json") => {
@@ -974,7 +1004,16 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
   };
 
   const handleApplyCustomDates = () => {
-    if (customStartDate && customEndDate) {
+    if (draftStartDate && draftEndDate && draftStartDate < draftEndDate) {
+      setCustomStartDate(draftStartDate);
+      setCustomEndDate(draftEndDate);
+      const s = new Date(draftStartDate);
+      const e = new Date(draftEndDate);
+      if (!isValidIntervalForRange(activeInterval, activeRange, s, e)) {
+        setActiveInterval(
+          INTERVALS.find((i) => isValidIntervalForRange(i.value, activeRange, s, e) && i.value !== "1m" && i.value !== "5m" && i.value !== "15m")?.value || "1d"
+        );
+      }
       setShowDatePicker(false);
       trackEvent("chart_custom_dates", { symbol, start: customStartDate, end: customEndDate });
     }
@@ -984,19 +1023,19 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
     const elem = chartContainerRef.current?.parentElement;
     if (!elem) return;
 
-    if (!isFullscreen) {
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-      }
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen?.().catch(() => setIsFullscreen(false));
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      document.exitFullscreen?.();
     }
-    setIsFullscreen(!isFullscreen);
   };
 
-  const validIntervals = getValidIntervalsForRange(activeRange);
+  const validIntervals =
+    customStartDate && customEndDate
+      ? INTERVALS.filter((i) =>
+          isValidIntervalForRange(i.value, activeRange, new Date(customStartDate), new Date(customEndDate))
+        ).map((i) => i.value)
+      : getValidIntervalsForRange(activeRange);
 
   return (
     <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl overflow-hidden">
@@ -1016,7 +1055,11 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
             </button>
           ))}
           <button
-            onClick={() => setShowDatePicker(!showDatePicker)}
+            onClick={() => {
+              setDraftStartDate(customStartDate);
+              setDraftEndDate(customEndDate);
+              setShowDatePicker(!showDatePicker);
+            }}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
               customStartDate && customEndDate
                 ? "bg-blue-500/15 text-blue-400"
@@ -1031,20 +1074,22 @@ export default function StockChartEnhanced({ symbol }: { symbol: string }) {
           <div className="flex flex-wrap items-center gap-2 p-3 bg-zinc-800/30 rounded-lg">
             <input
               type="date"
-              value={customStartDate}
-              onChange={(e) => setCustomStartDate(e.target.value)}
+              value={draftStartDate}
+              max={draftEndDate || undefined}
+              onChange={(e) => setDraftStartDate(e.target.value)}
               className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-300"
             />
             <span className="text-xs text-zinc-500">to</span>
             <input
               type="date"
-              value={customEndDate}
-              onChange={(e) => setCustomEndDate(e.target.value)}
+              value={draftEndDate}
+              min={draftStartDate || undefined}
+              onChange={(e) => setDraftEndDate(e.target.value)}
               className="px-3 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-300"
             />
             <button
               onClick={handleApplyCustomDates}
-              disabled={!customStartDate || !customEndDate}
+              disabled={!draftStartDate || !draftEndDate || draftStartDate >= draftEndDate}
               className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Apply

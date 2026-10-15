@@ -65,7 +65,7 @@ export class YahooChartDataProvider implements ChartDataProvider {
       params.set("endDate", options.endDate.toISOString());
     }
 
-    const res = await fetch(`/api/chart/${symbol}?${params.toString()}`);
+    const res = await fetch(`/api/chart/${encodeURIComponent(symbol)}?${params.toString()}`);
     if (!res.ok) {
       throw new Error(`Chart request failed: ${res.status}`);
     }

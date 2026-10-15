@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import yahooFinance from "@/lib/yahoo";
 import { marketDataCacheHeaders, noStoreHeaders } from "@/lib/api-cache";
 import { isValidMarketSymbol, normalizeSymbol } from "@/lib/symbols";
+import {
+  getStartDateForRange,
+  getDefaultIntervalForRange,
+  type ChartRange,
+  type ChartInterval,
+} from "@/lib/chart-utils";
 
 interface RangeConfig {
   periodLabel: string;
@@ -15,16 +21,20 @@ const rangeMap: Record<string, RangeConfig> = {
   "1mo": { periodLabel: "1mo", interval: "1d", intraday: false },
   "3mo": { periodLabel: "3mo", interval: "1d", intraday: false },
   "6mo": { periodLabel: "6mo", interval: "1d", intraday: false },
+  "ytd": { periodLabel: "ytd", interval: "1d", intraday: false },
   "1y": { periodLabel: "1y", interval: "1d", intraday: false },
   "5y": { periodLabel: "5y", interval: "1wk", intraday: false },
+  "max": { periodLabel: "max", interval: "1wk", intraday: false },
 };
 
-function getStartDate(period: string): Date {
+function getStartDate(period: string, customStartDate?: string): Date {
+  if (customStartDate) {
+    return new Date(customStartDate);
+  }
+
   const now = new Date();
   switch (period) {
     case "1d":
-      // Fetch 6 days back to guarantee we capture the last trading day
-      // (covers weekends + holidays), then trim to latest session
       return new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
     case "5d":
       return new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
@@ -34,10 +44,14 @@ function getStartDate(period: string): Date {
       return new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
     case "6mo":
       return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    case "ytd":
+      return new Date(now.getFullYear(), 0, 1);
     case "1y":
       return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
     case "5y":
       return new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+    case "max":
+      return new Date(now.getFullYear() - 20, now.getMonth(), now.getDate());
     default:
       return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
   }
@@ -79,8 +93,13 @@ export async function GET(
   { params }: { params: { symbol: string } }
 ) {
   const range = request.nextUrl.searchParams.get("range") || "1y";
+  const customInterval = request.nextUrl.searchParams.get("interval");
+  const startDate = request.nextUrl.searchParams.get("startDate");
+  const endDate = request.nextUrl.searchParams.get("endDate");
+  
   const symbol = normalizeSymbol(params.symbol);
   const config = rangeMap[range] || rangeMap["1y"];
+  const interval = customInterval || config.interval;
 
   if (!isValidMarketSymbol(symbol)) {
     return NextResponse.json(
@@ -90,12 +109,19 @@ export async function GET(
   }
 
   try {
-    const result = await yahooFinance.chart(symbol, {
-      period1: getStartDate(config.periodLabel),
-      interval: config.interval as any,
-    });
+    const chartOptions: any = {
+      period1: getStartDate(config.periodLabel, startDate || undefined),
+      interval: interval,
+    };
 
-    let quotes = (result.quotes || []).filter(
+    if (endDate) {
+      chartOptions.period2 = new Date(endDate);
+    }
+
+    const result = await yahooFinance.chart(symbol, chartOptions);
+
+    const resultQuotes = Array.isArray(result.quotes) ? result.quotes : [];
+    let quotes = resultQuotes.filter(
       (q: any) =>
         q.open != null && q.close != null && q.high != null && q.low != null
     );
@@ -126,7 +152,7 @@ export async function GET(
         meta: {
           symbol,
           range: config.periodLabel,
-          interval: config.interval,
+          interval: interval,
           source: "Yahoo Finance",
           updatedAt: new Date().toISOString(),
         },

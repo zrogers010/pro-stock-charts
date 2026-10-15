@@ -18,7 +18,7 @@ import { getRelatedAssets } from "@/lib/markets";
 import { getQuoteDisplayState } from "@/lib/quote-display";
 import type { QuoteData, SummaryData } from "@/lib/stock-data";
 
-const StockChart = dynamic(() => import("@/components/StockChart"), {
+const StockChart = dynamic(() => import("@/components/StockChartEnhanced"), {
   ssr: false,
   loading: () => <StockChartShell />,
 });
